@@ -27,6 +27,11 @@ A browser extension for Chrome that allows you to record a sequence of user acti
 - **Content Script**: Listens for user events on the page and sends them to the background script.
 - **Popup**: Provides the user interface to start/stop recording and export the final guide.
 
+## Future Scope
+
+- [ ] **AI-Powered Smart Descriptions**: Implement contextual awareness and local LLM integration (via Ollama) to generate higher-quality, human-like instructions.
+- [ ] **Interactive Guide Editor**: Build a dedicated editor page within the extension to manage, reorder, and refine guides in real-time before exporting.
+
 ## Acknowledgments
 
 Built with the assistance of Claude and Ollama.
