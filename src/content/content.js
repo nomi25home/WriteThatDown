@@ -4,7 +4,7 @@ let recordingIndicator = null;
 
 function createRecordingIndicator() {
   const indicator = document.createElement('div');
-  indicator.id = 'scribe-recording-indicator';
+  indicator.id = 'writethatdown-recording-indicator';
   indicator.style.position = 'fixed';
   indicator.style.top = '20px';
   indicator.style.right = '20px';
@@ -18,13 +18,13 @@ function createRecordingIndicator() {
 
   const style = document.createElement('style');
   style.textContent = `
-    @keyframes scribe-pulse {
+    @keyframes writethatdown-pulse {
       0% { box-shadow: 0 0 0 0px rgba(255, 0, 0, 0.7); }
       70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
       100% { box-shadow: 0 0 0 0px rgba(255, 0, 0, 0); }
     }
-    #scribe-recording-indicator {
-      animation: scribe-pulse 2s infinite;
+    #writethatdown-recording-indicator {
+      animation: writethatdown-pulse 2s infinite;
     }
   `;
   document.head.appendChild(style);

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Scribe Clone - Guide Creator",
+  "name": "WriteThatDown - Guide Creator",
   "version": "0.1",
   "description": "Captures mouse clicks and keystrokes to create how-to guides.",
   "permissions": [
