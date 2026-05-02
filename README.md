@@ -26,3 +26,7 @@ A browser extension for Chrome that allows you to record a sequence of user acti
 - **Background Script**: Manages the recording state and persists events to `chrome.storage.local`.
 - **Content Script**: Listens for user events on the page and sends them to the background script.
 - **Popup**: Provides the user interface to start/stop recording and export the final guide.
+
+## Acknowledgments
+
+Built with the assistance of Claude and Ollama.
