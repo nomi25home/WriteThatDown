@@ -1,6 +1,6 @@
 # Scribe Clone
 
-A browser extension that allows you to record a sequence of user actions and automatically generate a step-by-step user guide with screenshots.
+A browser extension for Chrome that allows you to record a sequence of user actions and automatically generate a step-by-step user guide with screenshots.
 
 ## Features
 
