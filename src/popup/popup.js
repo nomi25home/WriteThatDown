@@ -7,6 +7,7 @@ async function updateUI(isRecording, isPaused = false) {
 
   const pauseBtn = document.getElementById('pauseBtn');
   pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+  pauseBtn.classList.toggle('pause-active', isPaused);
 }
 
 chrome.storage.local.get(['isRecording', 'isPaused'], (result) => {

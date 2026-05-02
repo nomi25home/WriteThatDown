@@ -1,12 +1,50 @@
 let recording = false;
 let currentWord = '';
+let recordingIndicator = null;
+
+function createRecordingIndicator() {
+  const indicator = document.createElement('div');
+  indicator.id = 'scribe-recording-indicator';
+  indicator.style.position = 'fixed';
+  indicator.style.top = '20px';
+  indicator.style.right = '20px';
+  indicator.style.width = '12px';
+  indicator.style.height = '12px';
+  indicator.style.backgroundColor = 'red';
+  indicator.style.borderRadius = '50%';
+  indicator.style.zIndex = '1000000';
+  indicator.style.boxShadow = '0 0 0 rgba(255, 0, 0, 0.4)';
+  indicator.style.pointerEvents = 'none';
+
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes scribe-pulse {
+      0% { box-shadow: 0 0 0 0px rgba(255, 0, 0, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+      100% { box-shadow: 0 0 0 0px rgba(255, 0, 0, 0); }
+    }
+    #scribe-recording-indicator {
+      animation: scribe-pulse 2s infinite;
+    }
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(indicator);
+  return indicator;
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'START_CAPTURE') {
     recording = true;
+    if (!recordingIndicator) {
+      recordingIndicator = createRecordingIndicator();
+    }
     console.log('Content script: capture started');
   } else if (message.action === 'STOP_CAPTURE') {
     recording = false;
+    if (recordingIndicator) {
+      recordingIndicator.remove();
+      recordingIndicator = null;
+    }
     console.log('Content script: capture stopped');
   }
 });
@@ -16,17 +54,18 @@ document.addEventListener('click', (e) => {
 
   showClickPointer(e.clientX, e.clientY);
 
-  const element = e.target;
-  const eventData = {
-    type: 'click',
-    tagName: element.tagName,
-    text: element.innerText?.substring(0, 50),
-    id: element.id,
-    className: element.className,
-    xpath: getXPath(element),
-    x: (e.clientX / window.innerWidth) * 100,
-    y: (e.clientY / window.innerHeight) * 100
-  };
+    const element = e.target;
+    const eventData = {
+      type: 'click',
+      tagName: element.tagName,
+      text: element.innerText?.trim().substring(0, 50),
+      ariaLabel: element.getAttribute('aria-label') || element.getAttribute('title'),
+      id: element.id,
+      className: element.className,
+      xpath: getXPath(element),
+      x: (e.clientX / window.innerWidth) * 100,
+      y: (e.clientY / window.innerHeight) * 100
+    };
 
   chrome.runtime.sendMessage({ action: 'CAPTURE_EVENT', event: eventData });
 }, true);

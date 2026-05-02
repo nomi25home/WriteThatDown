@@ -8,18 +8,24 @@ export function generateDescription(event) {
   }
 
   if (event.type === 'click') {
-    const text = event.text ? `"${event.text}"` : '';
+    const label = event.ariaLabel || event.text;
+    const text = label ? `"${label}"` : '';
     const tag = event.tagName.toLowerCase();
 
     if (tag === 'button' || tag === 'input' || tag === 'a') {
-      return `Click the ${text} ${tag === 'a' ? 'link' : 'button'}`;
+      const type = tag === 'a' ? 'link' : 'button';
+      return text ? `Click the ${type} ${text}` : `Click the ${type}`;
+    }
+
+    if (text) {
+      return `Click ${text}`;
     }
 
     if (event.id) {
       return `Click the element with ID ${event.id}`;
     }
 
-    return `Click the ${text || 'element'}`;
+    return `Click the element`;
   }
 
   return 'Perform an action';
