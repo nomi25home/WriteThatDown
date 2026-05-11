@@ -91,26 +91,11 @@ async function captureScreenshot(event, tabId) {
 
 function generateHtmlGuide(events, title) {
   const stepsHtml = events.map((event, index) => {
-    const pointerHtml = event.type === 'click'
-      ? `<div class="click-pointer" style="left: ${event.x}%; top: ${event.y}%;"></div>`
-      : '';
-
     return `
-    <div class="step" data-index="${index}">
-      <div class="step-header">
-        <span class="step-number">Step ${index + 1}</span>
-        <p class="step-description" contenteditable="true" title="Click to edit">${event.description}</p>
-        <div class="step-controls">
-          <button class="move-btn" onclick="moveStep(this, -1)" title="Move Up">↑</button>
-          <button class="move-btn" onclick="moveStep(this, 1)" title="Move Down">↓</button>
-          <button class="delete-btn" onclick="deleteStep(this, ${event.timestamp})" title="Delete Step">🗑️</button>
-        </div>
-      </div>
+    <div class="step">
+      <h3 class="step-title">${index + 1}. ${event.description}</h3>
       <div class="step-image">
-        <div class="image-container">
-          <img src="${event.screenshot || ''}" alt="Step ${index + 1} Screenshot">
-          ${pointerHtml}
-        </div>
+        <img src="${event.screenshot || ''}" alt="Step ${index + 1} Screenshot">
       </div>
     </div>
   `;
@@ -123,146 +108,46 @@ function generateHtmlGuide(events, title) {
       <meta charset="UTF-8">
       <title>${title}</title>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f9f9f9; }
-        h1 { text-align: center; color: #333; margin-bottom: 20px; }
-        .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
-        .toolbar-btn { padding: 8px 16px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: white; font-size: 14px; font-weight: 500; transition: all 0.2s; }
-        .toolbar-btn:hover { background: #f0f0f0; }
-        .toolbar-btn.active { background: #007bff; color: white; border-color: #007bff; }
-        .step { background: white; border-radius: 12px; padding: 24px; margin-bottom: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
-        .step-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .step-number { background: #007bff; color: white; font-weight: bold; padding: 4px 12px; border-radius: 12px; font-size: 14px; }
-        .step-description { font-size: 18px; color: #444; margin: 0; outline: none; border-bottom: 1px dashed transparent; transition: border-color 0.2s; flex: 1; }
-        .step-description:hover { border-bottom-color: #ccc; cursor: text; }
-        .step-description:focus { border-bottom-color: #007bff; background: #fcfcfc; }
-        .step-controls { display: flex; gap: 4px; }
-        .move-btn { padding: 4px 8px; cursor: pointer; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px; font-size: 12px; }
-        .move-btn:hover { background: #eee; }
-        .delete-btn { padding: 4px 8px; cursor: pointer; border: 1px solid #ddd; background: #fff0f0; border-radius: 4px; font-size: 12px; color: #d9534f; }
-        .delete-btn:hover { background: #d9534f; color: white; }
-        .step-image { position: relative; }
-        .image-container { position: relative; display: inline-block; width: 100%; cursor: default; }
-        .image-container.redacting { cursor: crosshair; }
-        .step-image img { width: 100%; border-radius: 8px; border: 1px solid #eee; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .click-pointer {
-          position: absolute;
-          width: 14px;
-          height: 14px;
-          background: red;
-          border: 2px solid white;
-          border-radius: 50%;
-          transform: translate(-50%, -50%);
-          pointer-events: none;
-          z-index: 10;
-          box-shadow: 0 0 6px rgba(0,0,0,0.3);
-        }
-        .redaction-box {
-          position: absolute;
-          background: #808080;
-          border: 1px solid #666;
-          z-index: 11;
-          pointer-events: auto;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 850px; margin: 0 auto; padding: 40px 20px; background: white; color: #333; line-height: 1.6; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; color: #000; margin-bottom: 10px; }
+        .header .subtitle { font-size: 18px; color: #666; }
+
+        .intro-section { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 40px; text-align: center; border: 1px solid #eee; }
+        .intro-text { font-size: 16px; color: #444; margin: 0; }
+
+        .step { margin-bottom: 50px; }
+        .step-title { font-size: 20px; font-weight: bold; margin: 24px 0 16px 0; color: #000; border-bottom: none; }
+        .step-image { width: 100%; margin-bottom: 20px; }
+        .step-image img { width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: block; }
+
+        .footer { text-align: center; margin-top: 60px; padding-top: 20px; border-top: 1px solid #eee; font-size: 14px; }
+        .footer a { text-decoration: none; color: #000; }
+        .footer strong { color: #CB0000; }
+
         @media print {
-          body { background: white; margin: 0; padding: 0; }
-          .toolbar, .step-controls { display: none !important; }
-          .step { box-shadow: none; border: 1px solid #eee; page-break-inside: avoid; }
-          .step-description { border-bottom: none; }
+          body { padding: 0; }
+          .step { page-break-inside: avoid; }
         }
       </style>
     </head>
     <body>
-      <h1>${title}</h1>
-      <div class="toolbar">
-        <button class="toolbar-btn" id="redactToggle" onclick="toggleRedactMode()">Enable Redaction Mode</button>
-        <button class="toolbar-btn" onclick="window.print()">Print to PDF</button>
+      <div class="header">
+        <h1>${title}</h1>
+        <div class="subtitle">Quick Guide</div>
       </div>
-      <div id="guide-content">
+
+      <div class="intro-section">
+        <p class="intro-text">This guide will equip you with the skills to efficiently complete the process described in this task.</p>
+      </div>
+
+      <div class="guide-content">
         ${stepsHtml}
       </div>
-      <script>
-        function moveStep(btn, direction) {
-          const step = btn.closest('.step');
-          const container = document.getElementById('guide-content');
-          if (direction === -1 && step.previousElementSibling) {
-            container.insertBefore(step, step.previousElementSibling);
-          } else if (direction === 1 && step.nextElementSibling) {
-            container.insertBefore(step.nextElementSibling, step);
-          }
-          updateStepNumbers();
-        }
 
-        function updateStepNumbers() {
-          document.querySelectorAll('.step-number').forEach((span, i) => {
-            span.textContent = 'Step ' + (i + 1);
-          });
-        }
-
-        function deleteStep(btn, timestamp) {
-          if (confirm('Are you sure you want to delete this step?')) {
-            const step = btn.closest('.step');
-            step.remove();
-            updateStepNumbers();
-            chrome.runtime.sendMessage({ action: 'DELETE_STEP', timestamp: timestamp });
-          }
-        }
-
-        let redactMode = false;
-        function toggleRedactMode() {
-          redactMode = !redactMode;
-          const btn = document.getElementById('redactToggle');
-          btn.textContent = redactMode ? 'Disable Redaction Mode' : 'Enable Redaction Mode';
-          btn.classList.toggle('active', redactMode);
-
-          document.querySelectorAll('.image-container').forEach(container => {
-            container.classList.toggle('redacting', redactMode);
-          });
-        }
-
-        document.addEventListener('mousedown', e => {
-          if (!redactMode) return;
-          const container = e.target.closest('.image-container');
-          if (!container) return;
-
-          const rect = container.getBoundingClientRect();
-          const startX = e.clientX - rect.left;
-          const startY = e.clientY - rect.top;
-
-          const box = document.createElement('div');
-          box.className = 'redaction-box';
-          box.style.left = startX + 'px';
-          box.style.top = startY + 'px';
-          box.style.width = '0px';
-          box.style.height = '0px';
-          container.appendChild(box);
-
-          const onMouseMove = (moveEvent) => {
-            const currentX = moveEvent.clientX - rect.left;
-            const currentY = moveEvent.clientY - rect.top;
-
-            const left = Math.min(startX, currentX);
-            const top = Math.min(startY, currentY);
-            const width = Math.abs(startX - currentX);
-            const height = Math.abs(startY - currentY);
-
-            box.style.left = left + 'px';
-            box.style.top = top + 'px';
-            box.style.width = width + 'px';
-            box.style.height = height + 'px';
-          };
-
-          const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            if (parseInt(box.style.width) < 5 && parseInt(box.style.height) < 5) {
-              box.remove();
-            }
-          };
-
-          document.addEventListener('mousemove', onMouseMove);
-          document.addEventListener('mouseup', onMouseUp);
-        });
-      </script>
+      <div class="footer">
+        <a href="#" target="_blank" rel="noreferrer">Powered by <strong style="color:#CB0000">WriteThatDown</strong></a>
+      </div>
     </body>
     </html>
   `;
