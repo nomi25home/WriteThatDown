@@ -5,6 +5,17 @@ let isPaused = false;
 let events = [];
 let captureQueue = Promise.resolve();
 
+// Restore recording state when the service worker restarts mid-session.
+// Chrome can kill the SW after ~30 s of inactivity; without this, any
+// CAPTURE_EVENT that wakes the SW sees isRecording=false and is dropped.
+chrome.storage.local.get(['isRecording', 'isPaused', 'events'], (result) => {
+  if (result.isRecording) {
+    isRecording = true;
+    isPaused = result.isPaused || false;
+    events = result.events || [];
+  }
+});
+
 // C1 fix: escape all user/page-derived content before injecting into HTML
 function escapeHtml(str = '') {
   return String(str)

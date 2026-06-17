@@ -76,7 +76,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       recordingIndicator.remove();
       recordingIndicator = null;
     }
-    console.log('Content script: capture stopped');
   } else if (message.action === 'HIDE_INDICATOR') {
     if (recordingIndicator) recordingIndicator.style.display = 'none';
     sendResponse({});
@@ -85,6 +84,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({});
   }
 });
+
+// Flush any in-progress typing when the user mousedowns on a different element.
+// mousedown fires BEFORE blur (and before our click handler), so without this
+// flush the blur event can race the service-worker queue and the first typed
+// field in a session is occasionally dropped.
+document.addEventListener('mousedown', (e) => {
+  if (!recording) return;
+  const focused = document.activeElement;
+  if (!focused || focused === e.target || focused === document.body) return;
+  if (!isTypeable(focused)) return;
+  const before = focusValues.get(focused) ?? '';
+  const after  = focused.value ?? focused.innerText ?? '';
+  if (after.trim() && after !== before) {
+    const label = focused.getAttribute('placeholder')
+      || focused.getAttribute('aria-label')
+      || focused.getAttribute('name')
+      || focused.id || null;
+    chrome.runtime.sendMessage({
+      action: 'CAPTURE_EVENT',
+      event: { type: 'type', text: after.trim().substring(0, 200), fieldLabel: label }
+    });
+    // Update so the blur handler doesn't double-capture the same value
+    focusValues.set(focused, after);
+  }
+}, true);
 
 document.addEventListener('click', (e) => {
   if (!recording) return;
