@@ -92,7 +92,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 document.addEventListener('mousedown', (e) => {
   if (!recording) return;
   const focused = document.activeElement;
-  if (!focused || focused === e.target || focused === document.body) return;
+  // Skip if clicking within the same field (includes contentEditable children)
+  if (!focused || focused.contains(e.target) || focused === document.body) return;
   if (!isTypeable(focused)) return;
   const before = focusValues.get(focused) ?? '';
   const after  = focused.value ?? focused.innerText ?? '';
@@ -139,11 +140,15 @@ document.addEventListener('click', (e) => {
   });
 }, true);
 
-// Remember the value when focus enters a typeable field
+// Remember the value when focus enters a typeable field.
+// Only seed on the FIRST focus per element per session — re-focusing (e.g.
+// after alt-tab) must not overwrite the baseline or the change goes undetected.
 document.addEventListener('focus', (e) => {
   if (!recording) return;
   const el = e.target;
-  if (isTypeable(el)) focusValues.set(el, el.value ?? el.innerText ?? '');
+  if (isTypeable(el) && !focusValues.has(el)) {
+    focusValues.set(el, el.value ?? el.innerText ?? '');
+  }
 }, true);
 
 // When focus leaves, if the value changed emit a single "type" event
@@ -175,6 +180,8 @@ document.addEventListener('blur', (e) => {
       action: 'CAPTURE_EVENT',
       event: { type: 'type', text: after.trim().substring(0, 200), fieldLabel: label }
     });
+    // Advance baseline so a second visit to the same field only captures new text
+    focusValues.set(el, after);
   }
 }, true);
 
