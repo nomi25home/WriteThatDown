@@ -18,7 +18,10 @@ chrome.storage.local.get(['isRecording', 'isPaused'], (result) => {
 
 document.getElementById('startBtn').addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  chrome.runtime.sendMessage({ action: 'START_RECORDING', tabId: tab.id });
+  const title = document.getElementById('guideTitle').value.trim();
+  chrome.storage.local.set({ guideTitle: title || 'User Guide' }, () => {
+    chrome.runtime.sendMessage({ action: 'START_RECORDING', tabId: tab.id });
+  });
   updateUI(true);
 });
 
