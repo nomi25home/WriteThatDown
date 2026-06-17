@@ -162,7 +162,7 @@ box-shadow: 0 0 0 3px rgba(10, 68, 236, 0.15);
 ## File Structure Reference
 
 ```
-scribe-clone/
+WriteThatDown/
 ├── icons/                     ← All logo assets (source + generated PNGs)
 ├── src/
 │   ├── background/

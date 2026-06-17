@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WriteThatDown - Guide Creator",
-  "version": "0.1",
+  "version": "1.0",
   "description": "Captures mouse clicks and keystrokes to create how-to guides.",
   "permissions": [
     "storage",

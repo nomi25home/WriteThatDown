@@ -22,7 +22,7 @@ A Chrome extension that records your clicks and keystrokes as you work, then gen
 1. Clone or download this repository.
 2. Open Chrome and navigate to `chrome://extensions/`.
 3. Enable **Developer mode** (top-right toggle).
-4. Click **Load unpacked** and select the `scribe-clone/` folder.
+4. Click **Load unpacked** and select the cloned `WriteThatDown/` folder.
 
 ## How to use
 
