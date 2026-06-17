@@ -40,8 +40,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     const targetTabId = message.tabId;
     if (targetTabId) {
-      // Content script is already injected by manifest; just tell it to start.
-      chrome.tabs.sendMessage(targetTabId, { action: 'START_CAPTURE' }).catch(() => {});
+      // Inject (or re-use) the content script, then signal it to start.
+      // executeScript is idempotent here because content.js guards against
+      // double-registration with window.__wtdActive.
+      chrome.scripting.executeScript({
+        target: { tabId: targetTabId },
+        files: ['src/content/content.js']
+      })
+      .then(() => {
+        chrome.tabs.sendMessage(targetTabId, { action: 'START_CAPTURE' }).catch(() => {});
+      })
+      .catch(() => {
+        // Script may already be present (manifest injection); try sending directly.
+        chrome.tabs.sendMessage(targetTabId, { action: 'START_CAPTURE' }).catch(() => {});
+      });
     }
 
   } else if (message.action === 'STOP_RECORDING') {

@@ -1,3 +1,11 @@
+// Guard: if the script was already injected (manifest + executeScript), skip
+// re-registering all event listeners to avoid duplicates.
+if (window.__wtdActive) {
+  // Already running — just ensure the message listener is live (it is).
+  // Nothing else to do; the existing instance handles everything.
+} else {
+window.__wtdActive = true;
+
 let recording = false;
 let recordingIndicator = null;
 const focusValues = new WeakMap(); // tracks value on focus so we can detect changes
@@ -208,3 +216,5 @@ function getXPath(element) {
     if (sibling.nodeType === 1 && sibling.tagName === element.tagName) ix++;
   }
 }
+
+} // end window.__wtdActive guard
