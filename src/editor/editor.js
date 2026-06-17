@@ -196,7 +196,17 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   chrome.runtime.sendMessage({ action: 'EXPORT_PDF', title: getTitle() }, (response) => {
     if (response?.data) {
       const url = URL.createObjectURL(new Blob([response.data], { type: 'text/html' }));
-      chrome.tabs.create({ url });
+      chrome.tabs.create({ url }, (tab) => {
+        const listener = (tabId, info) => {
+          if (tabId === tab.id && info.status === 'complete') {
+            chrome.tabs.onUpdated.removeListener(listener);
+            setTimeout(() => {
+              chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => window.print() });
+            }, 400);
+          }
+        };
+        chrome.tabs.onUpdated.addListener(listener);
+      });
     }
   });
 });

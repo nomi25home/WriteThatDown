@@ -248,18 +248,7 @@ function generatePdfHtml(events, title) {
     .step-sub { font-size: 13px; color: #555; line-height: 1.6; padding-left: 44px; }
     @media print {
       body { padding: 0; }
-      .no-print { display: none !important; }
       .step { page-break-inside: avoid; }
-    }
-    .print-banner {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: #111; color: #fff;
-      display: flex; align-items: center; justify-content: center; gap: 16px;
-      padding: 14px 20px; font-size: 14px; z-index: 9999;
-    }
-    .print-banner button {
-      background: #0a44ec; color: #fff; border: none;
-      padding: 8px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
     }
   </style>
 </head>
@@ -270,14 +259,6 @@ function generatePdfHtml(events, title) {
     <div class="brand">Created with WriteThatDown</div>
   </div>
   ${stepsHtml}
-  <div class="print-banner no-print" id="printBanner">
-    <span>Save this guide as a PDF using your browser's print dialog</span>
-    <button onclick="window.print()">Save as PDF</button>
-    <button onclick="document.getElementById('printBanner').remove()" style="background:#444;">Dismiss</button>
-  </div>
-  <script>
-    window.addEventListener('load', () => { setTimeout(() => window.print(), 800); });
-  </script>
 </body>
 </html>`;
 }
