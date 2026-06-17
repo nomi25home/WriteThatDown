@@ -1,4 +1,9 @@
 export function generateDescription(event) {
+  if (event.type === 'type') {
+    const into = event.fieldLabel ? ` into "${event.fieldLabel}"` : '';
+    return `Type "${event.text}"${into}`;
+  }
+
   if (event.type === 'word') {
     return `Type "${event.text}"`;
   }

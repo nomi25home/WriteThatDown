@@ -3,282 +3,279 @@ import { generateDescription } from './description-generator.js';
 let isRecording = false;
 let isPaused = false;
 let events = [];
+let captureQueue = Promise.resolve();
+
+// Restore recording state when the service worker restarts mid-session.
+// Chrome can kill the SW after ~30 s of inactivity; without this, any
+// CAPTURE_EVENT that wakes the SW sees isRecording=false and is dropped.
+chrome.storage.local.get(['isRecording', 'isPaused', 'events'], (result) => {
+  if (result.isRecording) {
+    isRecording = true;
+    isPaused = result.isPaused || false;
+    events = result.events || [];
+  }
+});
+
+// C1 fix: escape all user/page-derived content before injecting into HTML
+function escapeHtml(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
 
 async function updateStorage() {
   await chrome.storage.local.set({ isRecording, isPaused, events });
 }
 
+// H1 fix: only accept messages from this extension's own pages
+function isFromExtension(sender) {
+  return sender.id === chrome.runtime.id;
+}
+
+// H1 fix: only accept CAPTURE_EVENT from a real content-script tab
+function isFromContentScript(sender) {
+  return sender.id === chrome.runtime.id && !!sender.tab;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'START_RECORDING') {
+    if (!isFromExtension(sender)) return;
     isRecording = true;
     isPaused = false;
     events = [];
+    captureQueue = Promise.resolve();
     updateStorage();
-    console.log('Recording started...');
+    chrome.storage.local.remove(['guideTitle']); // clear previous session's title
 
     const targetTabId = message.tabId;
     if (targetTabId) {
+      // Inject (or re-use) the content script, then signal it to start.
+      // executeScript is idempotent here because content.js guards against
+      // double-registration with window.__wtdActive.
       chrome.scripting.executeScript({
         target: { tabId: targetTabId },
         files: ['src/content/content.js']
       })
       .then(() => {
-        setTimeout(() => {
-          chrome.tabs.sendMessage(targetTabId, { action: 'START_CAPTURE' })
-            .then(() => console.log('START_CAPTURE sent successfully'))
-            .catch(err => console.warn('START_CAPTURE failed:', err));
-        }, 100);
+        chrome.tabs.sendMessage(targetTabId, { action: 'START_CAPTURE' }).catch(() => {});
       })
-      .catch(err => console.error('Failed to inject content script:', err));
-    } else {
-      console.error('START_RECORDING received without tabId');
+      .catch(() => {
+        // Script may already be present (manifest injection); try sending directly.
+        chrome.tabs.sendMessage(targetTabId, { action: 'START_CAPTURE' }).catch(() => {});
+      });
     }
+
   } else if (message.action === 'STOP_RECORDING') {
+    if (!isFromExtension(sender)) return;
     isRecording = false;
     isPaused = false;
     updateStorage();
-    console.log('Recording stopped. Total events:', events.length);
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'STOP_CAPTURE' })
-          .then(() => console.log('STOP_CAPTURE sent successfully'))
-          .catch(err => console.warn('STOP_CAPTURE failed:', err));
+      if (tabs?.[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'STOP_CAPTURE' }).catch(() => {});
       }
     });
+
   } else if (message.action === 'TOGGLE_PAUSE') {
+    if (!isFromExtension(sender)) return;
     isPaused = !isPaused;
     updateStorage();
-    console.log(`Recording ${isPaused ? 'paused' : 'resumed'}`);
     sendResponse({ isPaused });
+
   } else if (message.action === 'CAPTURE_EVENT') {
-    if (isRecording && !isPaused) {
-      captureScreenshot(message.event, sender.tab.id).then(screenshot => {
+    // H1 fix: must come from a content script in a real tab
+    if (!isFromContentScript(sender)) return;
+
+    // respond() is called after the screenshot so the content script knows
+    // exactly when to un-hide the recording indicator (no screenshot contamination).
+    const doCapture = (respond) => {
+      captureQueue = captureQueue.then(async () => {
+        const screenshot = await captureScreenshot(sender.tab.id);
+        respond({});                         // restore indicator now
         events.push({
-          ...message.event,
+          ...sanitiseEvent(message.event),
           description: generateDescription(message.event),
           screenshot,
           timestamp: Date.now()
         });
         updateStorage();
+      }).catch(() => { respond({}); });      // always respond so port closes
+    };
+
+    if (isRecording && !isPaused) {
+      doCapture(sendResponse);
+    } else if (isPaused) {
+      sendResponse({});                      // paused — nothing to capture
+    } else if (!isRecording) {
+      // Service worker may have just restarted; the async startup restore hasn't
+      // finished yet. Re-read storage synchronously here before discarding.
+      chrome.storage.local.get(['isRecording', 'isPaused', 'events'], (result) => {
+        if (result.isRecording && !result.isPaused) {
+          isRecording = true;
+          isPaused = false;
+          events = result.events || [];
+          doCapture(sendResponse);
+        } else {
+          sendResponse({});
+        }
       });
     }
+
   } else if (message.action === 'EXPORT_GUIDE') {
-    const htmlGuide = generateHtmlGuide(events, message.title || 'User Guide');
-    sendResponse({ data: htmlGuide });
+    if (!isFromExtension(sender)) return;
+    chrome.storage.local.get(['events'], (result) => {
+      const storedEvents = result.events || [];
+      sendResponse({ data: generateHtmlGuide(storedEvents, message.title || 'User Guide') });
+    });
+
   } else if (message.action === 'EXPORT_MARKDOWN') {
-    const mdGuide = generateMarkdownGuide(events, message.title || 'User Guide');
-    sendResponse({ data: mdGuide });
+    if (!isFromExtension(sender)) return;
+    chrome.storage.local.get(['events'], (result) => {
+      const storedEvents = result.events || [];
+      sendResponse({ data: generateMarkdownGuide(storedEvents, message.title || 'User Guide') });
+    });
+
+  } else if (message.action === 'COPY_GUIDE') {
+    if (!isFromExtension(sender)) return;
+    chrome.storage.local.get(['events'], (result) => {
+      const storedEvents = result.events || [];
+      sendResponse({ data: generateClipboardHtml(storedEvents, message.title || 'User Guide') });
+    });
+
   } else if (message.action === 'DELETE_STEP') {
-    const index = events.findIndex(e => e.timestamp === message.timestamp);
-    if (index !== -1) {
-      events.splice(index, 1);
-      updateStorage();
-      console.log('Step deleted from storage');
-    }
+    if (!isFromExtension(sender)) return;
+    chrome.storage.local.get(['events'], (result) => {
+      const storedEvents = result.events || [];
+      const index = storedEvents.findIndex(e => e.timestamp === message.timestamp);
+      if (index !== -1) {
+        storedEvents.splice(index, 1);
+        events = storedEvents;
+        chrome.storage.local.set({ events: storedEvents });
+      }
+    });
+
+  } else if (message.action === 'HIDE_INDICATOR' || message.action === 'SHOW_INDICATOR') {
+    // These are handled by content.js directly; background ignores them
   }
+
   return true;
 });
 
-async function captureScreenshot(event, tabId) {
+// Sanitise incoming event fields to safe types/lengths before storing
+function sanitiseEvent(evt) {
+  return {
+    type:       typeof evt.type === 'string'       ? evt.type.substring(0, 20)  : '',
+    tagName:    typeof evt.tagName === 'string'     ? evt.tagName.substring(0, 30) : '',
+    text:       typeof evt.text === 'string'        ? evt.text.substring(0, 300)  : '',
+    ariaLabel:  typeof evt.ariaLabel === 'string'   ? evt.ariaLabel.substring(0, 200) : '',
+    id:         typeof evt.id === 'string'          ? evt.id.substring(0, 100)   : '',
+    fieldLabel: typeof evt.fieldLabel === 'string'  ? evt.fieldLabel.substring(0, 100) : '',
+    key:        typeof evt.key === 'string'         ? evt.key.substring(0, 20)   : '',
+    x:          typeof evt.x === 'number'           ? evt.x : 0,
+    y:          typeof evt.y === 'number'           ? evt.y : 0,
+  };
+}
+
+async function captureScreenshot(tabId) {
   try {
-    const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 50 });
-    return dataUrl;
-  } catch (error) {
-    console.error('Screenshot failed:', error);
+    return await chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 50 });
+  } catch {
     return null;
   }
 }
 
-function generateHtmlGuide(events, title) {
-  const stepsHtml = events.map((event, index) => {
-    const pointerHtml = event.type === 'click'
-      ? `<div class="click-pointer" style="left: ${event.x}%; top: ${event.y}%;"></div>`
+// Clipboard-optimized: inline styles only, no <head>/<style> blocks.
+// C1 fix: all user-derived strings escaped before injection.
+function generateClipboardHtml(events, title) {
+  const steps = events.map((event, index) => {
+    const imgHtml = event.screenshot
+      ? `<img src="${event.screenshot}" alt="Step ${index + 1}" style="width:100%;max-width:700px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.12);display:block;margin-bottom:12px;">`
       : '';
-
+    const subHtml = event.subDescription
+      ? `<p style="font-size:14px;color:#555;margin:0 0 16px 0;line-height:1.6;">${escapeHtml(event.subDescription)}</p>`
+      : '';
     return `
-    <div class="step" data-index="${index}">
-      <div class="step-header">
-        <span class="step-number">Step ${index + 1}</span>
-        <p class="step-description" contenteditable="true" title="Click to edit">${event.description}</p>
-        <div class="step-controls">
-          <button class="move-btn" onclick="moveStep(this, -1)" title="Move Up">↑</button>
-          <button class="move-btn" onclick="moveStep(this, 1)" title="Move Down">↓</button>
-          <button class="delete-btn" onclick="deleteStep(this, ${event.timestamp})" title="Delete Step">🗑️</button>
-        </div>
-      </div>
-      <div class="step-image">
-        <div class="image-container">
-          <img src="${event.screenshot || ''}" alt="Step ${index + 1} Screenshot">
-          ${pointerHtml}
-        </div>
-      </div>
-    </div>
-  `;
+      <div style="margin-bottom:40px;">
+        <p style="font-size:16px;font-weight:bold;color:#111;margin:0 0 10px 0;">${index + 1}. ${escapeHtml(event.description)}</p>
+        ${imgHtml}
+        ${subHtml}
+      </div>`;
   }).join('');
 
   return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title>${title}</title>
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f9f9f9; }
-        h1 { text-align: center; color: #333; margin-bottom: 20px; }
-        .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
-        .toolbar-btn { padding: 8px 16px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: white; font-size: 14px; font-weight: 500; transition: all 0.2s; }
-        .toolbar-btn:hover { background: #f0f0f0; }
-        .toolbar-btn.active { background: #007bff; color: white; border-color: #007bff; }
-        .step { background: white; border-radius: 12px; padding: 24px; margin-bottom: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
-        .step-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .step-number { background: #007bff; color: white; font-weight: bold; padding: 4px 12px; border-radius: 12px; font-size: 14px; }
-        .step-description { font-size: 18px; color: #444; margin: 0; outline: none; border-bottom: 1px dashed transparent; transition: border-color 0.2s; flex: 1; }
-        .step-description:hover { border-bottom-color: #ccc; cursor: text; }
-        .step-description:focus { border-bottom-color: #007bff; background: #fcfcfc; }
-        .step-controls { display: flex; gap: 4px; }
-        .move-btn { padding: 4px 8px; cursor: pointer; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px; font-size: 12px; }
-        .move-btn:hover { background: #eee; }
-        .delete-btn { padding: 4px 8px; cursor: pointer; border: 1px solid #ddd; background: #fff0f0; border-radius: 4px; font-size: 12px; color: #d9534f; }
-        .delete-btn:hover { background: #d9534f; color: white; }
-        .step-image { position: relative; }
-        .image-container { position: relative; display: inline-block; width: 100%; cursor: default; }
-        .image-container.redacting { cursor: crosshair; }
-        .step-image img { width: 100%; border-radius: 8px; border: 1px solid #eee; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .click-pointer {
-          position: absolute;
-          width: 14px;
-          height: 14px;
-          background: red;
-          border: 2px solid white;
-          border-radius: 50%;
-          transform: translate(-50%, -50%);
-          pointer-events: none;
-          z-index: 10;
-          box-shadow: 0 0 6px rgba(0,0,0,0.3);
-        }
-        .redaction-box {
-          position: absolute;
-          background: #808080;
-          border: 1px solid #666;
-          z-index: 11;
-          pointer-events: auto;
-        }
-        @media print {
-          body { background: white; margin: 0; padding: 0; }
-          .toolbar, .step-controls { display: none !important; }
-          .step { box-shadow: none; border: 1px solid #eee; page-break-inside: avoid; }
-          .step-description { border-bottom: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <h1>${title}</h1>
-      <div class="toolbar">
-        <button class="toolbar-btn" id="redactToggle" onclick="toggleRedactMode()">Enable Redaction Mode</button>
-        <button class="toolbar-btn" onclick="window.print()">Print to PDF</button>
-      </div>
-      <div id="guide-content">
-        ${stepsHtml}
-      </div>
-      <script>
-        function moveStep(btn, direction) {
-          const step = btn.closest('.step');
-          const container = document.getElementById('guide-content');
-          if (direction === -1 && step.previousElementSibling) {
-            container.insertBefore(step, step.previousElementSibling);
-          } else if (direction === 1 && step.nextElementSibling) {
-            container.insertBefore(step.nextElementSibling, step);
-          }
-          updateStepNumbers();
-        }
-
-        function updateStepNumbers() {
-          document.querySelectorAll('.step-number').forEach((span, i) => {
-            span.textContent = 'Step ' + (i + 1);
-          });
-        }
-
-        function deleteStep(btn, timestamp) {
-          if (confirm('Are you sure you want to delete this step?')) {
-            const step = btn.closest('.step');
-            step.remove();
-            updateStepNumbers();
-            chrome.runtime.sendMessage({ action: 'DELETE_STEP', timestamp: timestamp });
-          }
-        }
-
-        let redactMode = false;
-        function toggleRedactMode() {
-          redactMode = !redactMode;
-          const btn = document.getElementById('redactToggle');
-          btn.textContent = redactMode ? 'Disable Redaction Mode' : 'Enable Redaction Mode';
-          btn.classList.toggle('active', redactMode);
-
-          document.querySelectorAll('.image-container').forEach(container => {
-            container.classList.toggle('redacting', redactMode);
-          });
-        }
-
-        document.addEventListener('mousedown', e => {
-          if (!redactMode) return;
-          const container = e.target.closest('.image-container');
-          if (!container) return;
-
-          const rect = container.getBoundingClientRect();
-          const startX = e.clientX - rect.left;
-          const startY = e.clientY - rect.top;
-
-          const box = document.createElement('div');
-          box.className = 'redaction-box';
-          box.style.left = startX + 'px';
-          box.style.top = startY + 'px';
-          box.style.width = '0px';
-          box.style.height = '0px';
-          container.appendChild(box);
-
-          const onMouseMove = (moveEvent) => {
-            const currentX = moveEvent.clientX - rect.left;
-            const currentY = moveEvent.clientY - rect.top;
-
-            const left = Math.min(startX, currentX);
-            const top = Math.min(startY, currentY);
-            const width = Math.abs(startX - currentX);
-            const height = Math.abs(startY - currentY);
-
-            box.style.left = left + 'px';
-            box.style.top = top + 'px';
-            box.style.width = width + 'px';
-            box.style.height = height + 'px';
-          };
-
-          const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            if (parseInt(box.style.width) < 5 && parseInt(box.style.height) < 5) {
-              box.remove();
-            }
-          };
-
-          document.addEventListener('mousemove', onMouseMove);
-          document.addEventListener('mouseup', onMouseUp);
-        });
-      </script>
-    </body>
-    </html>
-  `;
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:700px;color:#333;line-height:1.6;">
+      <h1 style="font-size:28px;color:#000;margin:0 0 6px 0;">${escapeHtml(title)}</h1>
+      <p style="font-size:15px;color:#666;margin:0 0 32px 0;">Step-by-step guide</p>
+      ${steps}
+      <p style="font-size:12px;color:#999;border-top:1px solid #eee;padding-top:12px;margin-top:40px;">
+        Created with <strong style="color:#0a44ec;">WriteThatDown</strong>
+      </p>
+    </div>`;
 }
 
+function generateHtmlGuide(events, title) {
+  const stepsHtml = events.map((event, index) => {
+    const subHtml = event.subDescription
+      ? `<p class="step-sub">${escapeHtml(event.subDescription)}</p>`
+      : '';
+    return `
+    <div class="step">
+      <h3 class="step-title">${index + 1}. ${escapeHtml(event.description)}</h3>
+      <div class="step-image">
+        <img src="${event.screenshot || ''}" alt="Step ${index + 1} Screenshot">
+      </div>
+      ${subHtml}
+    </div>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 850px; margin: 0 auto; padding: 40px 20px; background: white; color: #333; line-height: 1.6; }
+    .header { text-align: center; margin-bottom: 40px; }
+    .header h1 { font-size: 32px; color: #000; margin-bottom: 10px; }
+    .header .subtitle { font-size: 18px; color: #666; }
+    .intro-section { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 40px; text-align: center; border: 1px solid #eee; }
+    .intro-text { font-size: 16px; color: #444; margin: 0; }
+    .step { margin-bottom: 50px; }
+    .step-title { font-size: 20px; font-weight: bold; margin: 24px 0 16px 0; color: #000; }
+    .step-image { width: 100%; margin-bottom: 14px; }
+    .step-image img { width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: block; }
+    .step-sub { font-size: 15px; color: #555; line-height: 1.6; margin: 0 0 20px 0; }
+    .footer { text-align: center; margin-top: 60px; padding-top: 20px; border-top: 1px solid #eee; font-size: 14px; }
+    .footer a { text-decoration: none; color: #000; }
+    @media print { body { padding: 0; } .step { page-break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${escapeHtml(title)}</h1>
+    <div class="subtitle">Quick Guide</div>
+  </div>
+  <div class="intro-section">
+    <p class="intro-text">This guide will equip you with the skills to efficiently complete the process described in this task.</p>
+  </div>
+  <div class="guide-content">${stepsHtml}</div>
+  <div class="footer">
+    <a href="#" target="_blank" rel="noreferrer">Powered by <strong style="color:#0a44ec">WriteThatDown</strong></a>
+  </div>
+</body>
+</html>`;
+}
 
 function generateMarkdownGuide(events, title) {
   let md = `# ${title}\n\n`;
-
   events.forEach((event, index) => {
-    md += `## Step ${index + 1}\n${event.description}\n\n`;
-    if (event.screenshot) {
-      md += `![Step ${index + 1} Screenshot](${event.screenshot})\n\n`;
-    }
+    md += `## Step ${index + 1}: ${event.description}\n\n`;
+    if (event.screenshot) md += `![Step ${index + 1} Screenshot](${event.screenshot})\n\n`;
+    if (event.subDescription) md += `${event.subDescription}\n\n`;
     md += `---\n\n`;
   });
-
   return md;
 }
