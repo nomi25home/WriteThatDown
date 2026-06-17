@@ -213,7 +213,9 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
     if (!response?.data) return;
     try {
       const blobHtml = new Blob([response.data], { type: 'text/html' });
-      const blobText = new Blob([response.data.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()], { type: 'text/plain' });
+      // M3 fix: use DOMParser instead of regex to extract safe plaintext
+      const doc = new DOMParser().parseFromString(response.data, 'text/html');
+      const blobText = new Blob([doc.body.innerText || ''], { type: 'text/plain' });
       await navigator.clipboard.write([new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })]);
       const orig = btn.textContent;
       btn.textContent = 'Copied!';
@@ -374,7 +376,13 @@ document.getElementById('redactClearBtn').addEventListener('click', () => {
   syncUndoRedo();
 });
 
-document.getElementById('redactCancelBtn').addEventListener('click', closeRedact);
+document.getElementById('redactCancelBtn').addEventListener('click', () => {
+  // M1 fix: warn if boxes were drawn but not applied
+  if (redactRects.length > 0) {
+    if (!confirm('You have unsaved redactions. Cancel anyway? The original screenshot will be kept.')) return;
+  }
+  closeRedact();
+});
 
 document.getElementById('redactApplyBtn').addEventListener('click', () => {
   if (redactRects.length === 0) { closeRedact(); return; }

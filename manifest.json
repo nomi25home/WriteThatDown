@@ -27,7 +27,7 @@
   "web_accessible_resources": [
     {
       "resources": ["src/editor/editor.html"],
-      "matches": ["<all_urls>"]
+      "matches": ["chrome-extension://*/*"]
     }
   ],
   "background": {
@@ -40,7 +40,5 @@
       "js": ["src/content/content.js"]
     }
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ]
+  "host_permissions": []
 }

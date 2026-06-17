@@ -114,6 +114,18 @@ document.addEventListener('focus', (e) => {
 document.addEventListener('blur', (e) => {
   if (!recording) return;
   const el = e.target;
+
+  // C2 fix: for password fields, record interaction but never the value
+  if (isPasswordField(el)) {
+    const label = el.getAttribute('placeholder') || el.getAttribute('aria-label')
+      || el.getAttribute('name') || el.id || 'password field';
+    chrome.runtime.sendMessage({
+      action: 'CAPTURE_EVENT',
+      event: { type: 'type', text: '[password]', fieldLabel: label }
+    });
+    return;
+  }
+
   if (!isTypeable(el)) return;
   const before = focusValues.get(el) ?? '';
   const after  = el.value ?? el.innerText ?? '';
@@ -135,9 +147,14 @@ function isTypeable(el) {
   if (tag === 'textarea') return true;
   if (tag === 'input') {
     const t = (el.type || 'text').toLowerCase();
-    return ['text','email','password','search','url','number','tel'].includes(t);
+    // C2 fix: never capture password field values
+    return ['text','email','search','url','number','tel'].includes(t);
   }
   return el.isContentEditable;
+}
+
+function isPasswordField(el) {
+  return el.tagName?.toLowerCase() === 'input' && el.type?.toLowerCase() === 'password';
 }
 
 function showClickHighlight(element) {
@@ -175,7 +192,8 @@ function showClickHighlight(element) {
 }
 
 function getXPath(element) {
-  if (element.id !== '') return `id("${element.id}")`;
+  // M4 fix: escape quotes in id to prevent malformed XPath
+  if (element.id !== '') return `id("${element.id.replace(/"/g, '&quot;')}")`;
   if (element === document.body) return element.tagName;
 
   let ix = 0;

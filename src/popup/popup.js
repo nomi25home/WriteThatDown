@@ -57,7 +57,9 @@ document.getElementById('copyClipboardBtn').addEventListener('click', async () =
     if (response && response.data) {
       try {
         const blobHtml = new Blob([response.data], { type: 'text/html' });
-        const blobText = new Blob([response.data.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()], { type: 'text/plain' });
+        // M3 fix: use DOMParser instead of regex to extract safe plaintext
+        const doc = new DOMParser().parseFromString(response.data, 'text/html');
+        const blobText = new Blob([doc.body.innerText || ''], { type: 'text/plain' });
 
         await navigator.clipboard.write([
           new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })
