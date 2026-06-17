@@ -87,7 +87,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === 'CAPTURE_EVENT') {
     // H1 fix: must come from a content script in a real tab
     if (!isFromContentScript(sender)) return;
-    if (isRecording && !isPaused) {
+
+    const doCapture = () => {
       captureQueue = captureQueue.then(async () => {
         const screenshot = await captureScreenshot(sender.tab.id);
         events.push({
@@ -98,6 +99,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         updateStorage();
       }).catch(() => {});
+    };
+
+    if (isRecording && !isPaused) {
+      doCapture();
+    } else if (!isRecording) {
+      // Service worker may have just restarted; the async startup restore hasn't
+      // finished yet. Re-read storage synchronously here before discarding.
+      chrome.storage.local.get(['isRecording', 'isPaused', 'events'], (result) => {
+        if (result.isRecording && !result.isPaused) {
+          isRecording = true;
+          isPaused = false;
+          events = result.events || [];
+          doCapture();
+        }
+      });
     }
 
   } else if (message.action === 'EXPORT_GUIDE') {

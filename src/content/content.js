@@ -8,7 +8,8 @@ window.__wtdActive = true;
 
 let recording = false;
 let recordingIndicator = null;
-const focusValues = new WeakMap(); // tracks value on focus so we can detect changes
+const focusValues   = new WeakMap(); // baseline value at first focus
+const inputSnapshot = new WeakMap(); // most recent value seen via input event
 
 function createRecordingIndicator() {
   const style = document.createElement('style');
@@ -68,7 +69,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Pre-seed focusValues for any field already focused when recording starts
     const active = document.activeElement;
     if (active && (isTypeable(active) || isPasswordField(active))) {
-      focusValues.set(active, active.value ?? active.innerText ?? '');
+      focusValues.set(active, currentValue(active));
     }
   } else if (message.action === 'STOP_CAPTURE') {
     recording = false;
@@ -96,7 +97,7 @@ document.addEventListener('mousedown', (e) => {
   if (!focused || focused.contains(e.target) || focused === document.body) return;
   if (!isTypeable(focused)) return;
   const before = focusValues.get(focused) ?? '';
-  const after  = focused.value ?? focused.innerText ?? '';
+  const after  = currentValue(focused);
   if (after.trim() && after !== before) {
     const label = focused.getAttribute('placeholder')
       || focused.getAttribute('aria-label')
@@ -106,7 +107,6 @@ document.addEventListener('mousedown', (e) => {
       action: 'CAPTURE_EVENT',
       event: { type: 'type', text: after.trim().substring(0, 200), fieldLabel: label }
     });
-    // Update so the blur handler doesn't double-capture the same value
     focusValues.set(focused, after);
   }
 }, true);
@@ -147,8 +147,16 @@ document.addEventListener('focus', (e) => {
   if (!recording) return;
   const el = e.target;
   if (isTypeable(el) && !focusValues.has(el)) {
-    focusValues.set(el, el.value ?? el.innerText ?? '');
+    focusValues.set(el, currentValue(el));
   }
+}, true);
+
+// Track every keystroke so we always have the real value, even for
+// React/Draft.js/Slate fields where el.value can lag at blur time.
+document.addEventListener('input', (e) => {
+  if (!recording) return;
+  const el = e.target;
+  if (isTypeable(el)) inputSnapshot.set(el, currentValue(el));
 }, true);
 
 // When focus leaves, if the value changed emit a single "type" event
@@ -169,7 +177,7 @@ document.addEventListener('blur', (e) => {
 
   if (!isTypeable(el)) return;
   const before = focusValues.get(el) ?? '';
-  const after  = el.value ?? el.innerText ?? '';
+  const after  = currentValue(el);
   if (after.trim() && after !== before) {
     const label = el.getAttribute('placeholder')
       || el.getAttribute('aria-label')
@@ -184,6 +192,12 @@ document.addEventListener('blur', (e) => {
     focusValues.set(el, after);
   }
 }, true);
+
+// Best available current value for a field: prefer the snapshot from the last
+// input event (always fresh), fall back to the DOM property.
+function currentValue(el) {
+  return inputSnapshot.get(el) ?? el.value ?? el.innerText ?? '';
+}
 
 function isTypeable(el) {
   const tag = el.tagName?.toLowerCase();
