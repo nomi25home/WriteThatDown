@@ -48,6 +48,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     events = [];
     captureQueue = Promise.resolve();
     updateStorage();
+    chrome.storage.local.remove(['guideTitle']); // clear previous session's title
 
     const targetTabId = message.tabId;
     if (targetTabId) {

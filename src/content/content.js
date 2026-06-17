@@ -44,13 +44,13 @@ function createRecordingIndicator() {
     ">✍️ Writing it down…</span>
   `;
   indicator.style.cssText = `
-    position: fixed; top: 16px; right: 16px;
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(20, 20, 20, 0.88);
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(20, 20, 20, 0.82);
     backdrop-filter: blur(6px);
-    border: 1px solid rgba(229, 62, 62, 0.5);
+    border: 1px solid rgba(229, 62, 62, 0.45);
     border-radius: 20px;
-    padding: 6px 14px 6px 10px;
+    padding: 5px 12px 5px 9px;
     z-index: 1000000; pointer-events: none;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
