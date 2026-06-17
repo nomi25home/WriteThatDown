@@ -63,13 +63,13 @@ A Chrome extension that records your clicks and keystrokes as you work, then gen
 
 ### Power features
 - [ ] **Callout annotations** — draw arrows and text labels on screenshots to highlight the click target
-- [ ] **AI-generated descriptions** — send screenshot + click context to an LLM (local via Ollama or Claude API) for richer, context-aware step text
-- [ ] **Google Slides / PowerPoint export** — one-click deck generation from a recorded guide
 - [ ] **Pause indicator** — show a distinct "⏸ Paused" state on the recording badge
 
-### Future / longer-term
-- [ ] **Shareable link** — host a guide as a public URL (requires a backend)
-- [ ] **Team / organisation guides** — shared library of recorded workflows
+### Other platforms
+- [ ] **Other browsers** — Firefox (WebExtensions API), Edge, Safari
+- [ ] **Standalone desktop apps** — native Windows, Linux, and macOS apps (Electron or Tauri) for users who don't use Chrome
+
+> **Privacy principle:** WriteThatDown is local-only by design. All recordings, screenshots, and guides stay on your device. No accounts, no cloud sync, no data leaves your machine.
 
 ## Brand
 
