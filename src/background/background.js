@@ -88,9 +88,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // H1 fix: must come from a content script in a real tab
     if (!isFromContentScript(sender)) return;
 
-    const doCapture = () => {
+    // respond() is called after the screenshot so the content script knows
+    // exactly when to un-hide the recording indicator (no screenshot contamination).
+    const doCapture = (respond) => {
       captureQueue = captureQueue.then(async () => {
         const screenshot = await captureScreenshot(sender.tab.id);
+        respond({});                         // restore indicator now
         events.push({
           ...sanitiseEvent(message.event),
           description: generateDescription(message.event),
@@ -98,11 +101,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           timestamp: Date.now()
         });
         updateStorage();
-      }).catch(() => {});
+      }).catch(() => { respond({}); });      // always respond so port closes
     };
 
     if (isRecording && !isPaused) {
-      doCapture();
+      doCapture(sendResponse);
+    } else if (isPaused) {
+      sendResponse({});                      // paused — nothing to capture
     } else if (!isRecording) {
       // Service worker may have just restarted; the async startup restore hasn't
       // finished yet. Re-read storage synchronously here before discarding.
@@ -111,7 +116,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           isRecording = true;
           isPaused = false;
           events = result.events || [];
-          doCapture();
+          doCapture(sendResponse);
+        } else {
+          sendResponse({});
         }
       });
     }
