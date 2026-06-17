@@ -40,16 +40,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     const targetTabId = message.tabId;
     if (targetTabId) {
-      chrome.scripting.executeScript({
-        target: { tabId: targetTabId },
-        files: ['src/content/content.js']
-      })
-      .then(() => {
-        setTimeout(() => {
-          chrome.tabs.sendMessage(targetTabId, { action: 'START_CAPTURE' }).catch(() => {});
-        }, 100);
-      })
-      .catch(() => {});
+      // Content script is already injected by manifest; just tell it to start.
+      chrome.tabs.sendMessage(targetTabId, { action: 'START_CAPTURE' }).catch(() => {});
     }
 
   } else if (message.action === 'STOP_RECORDING') {

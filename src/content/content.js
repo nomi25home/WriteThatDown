@@ -57,7 +57,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!recordingIndicator) {
       recordingIndicator = createRecordingIndicator();
     }
-    console.log('Content script: capture started');
+    // Pre-seed focusValues for any field already focused when recording starts
+    const active = document.activeElement;
+    if (active && (isTypeable(active) || isPasswordField(active))) {
+      focusValues.set(active, active.value ?? active.innerText ?? '');
+    }
   } else if (message.action === 'STOP_CAPTURE') {
     recording = false;
     if (recordingIndicator) {
