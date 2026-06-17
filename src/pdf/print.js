@@ -7,12 +7,16 @@ function escapeHtml(str) {
     .replace(/'/g, '&#x27;');
 }
 
+function isSafeScreenshot(url) {
+  return typeof url === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(url);
+}
+
 chrome.storage.local.get(['events', 'guideTitle', 'pdfTitle'], (result) => {
   const events = result.events || [];
   const title = result.pdfTitle || result.guideTitle || 'User Guide';
 
   const stepsHtml = events.map((event, i) => {
-    const imgHtml = event.screenshot
+    const imgHtml = isSafeScreenshot(event.screenshot)
       ? `<div class="step-image"><img src="${event.screenshot}" alt="Step ${i + 1}"></div>`
       : '';
     const subHtml = event.subDescription

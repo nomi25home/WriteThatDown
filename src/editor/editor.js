@@ -57,7 +57,7 @@ function render() {
       </div>
       <div class="step-body">
         <div class="step-screenshot">
-          ${event.screenshot
+          ${isSafeScreenshot(event.screenshot)
             ? `<img src="${event.screenshot}" alt="Step ${index + 1}">`
             : `<div class="no-screenshot">No screenshot</div>`}
         </div>
@@ -234,11 +234,16 @@ function download(data, filename, type) {
 }
 
 function escapeHtml(str = '') {
-  return str
+  return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+function isSafeScreenshot(url) {
+  return typeof url === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(url);
 }
 
 function autoResize(el) {

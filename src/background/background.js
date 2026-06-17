@@ -26,13 +26,26 @@ function escapeHtml(str = '') {
     .replace(/'/g, '&#x27;');
 }
 
+// Only embed screenshots that are genuine image data URLs from captureVisibleTab.
+// Rejects anything that could be a javascript: URL or tampered storage value.
+function isSafeScreenshot(url) {
+  return typeof url === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(url);
+}
+
 async function updateStorage() {
   await chrome.storage.local.set({ isRecording, isPaused, events });
 }
 
-// H1 fix: only accept messages from this extension's own pages
+// H1 fix: only accept messages from this extension's own pages.
+// Also verify the sender URL matches expected extension pages so a
+// compromised web page that somehow spoofs the extension ID still fails.
 function isFromExtension(sender) {
-  return sender.id === chrome.runtime.id;
+  if (sender.id !== chrome.runtime.id) return false;
+  // Content scripts have sender.tab; extension pages have sender.url
+  if (sender.tab) return false; // use isFromContentScript for tab senders
+  const url = sender.url || '';
+  const base = chrome.runtime.getURL('');
+  return url.startsWith(base);
 }
 
 // H1 fix: only accept CAPTURE_EVENT from a real content-script tab
@@ -191,7 +204,7 @@ async function captureScreenshot(tabId) {
 // C1 fix: all user-derived strings escaped before injection.
 function generateClipboardHtml(events, title) {
   const steps = events.map((event, index) => {
-    const imgHtml = event.screenshot
+    const imgHtml = isSafeScreenshot(event.screenshot)
       ? `<img src="${event.screenshot}" alt="Step ${index + 1}" style="width:100%;max-width:700px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.12);display:block;margin-bottom:12px;">`
       : '';
     const subHtml = event.subDescription
@@ -225,7 +238,7 @@ function generateHtmlGuide(events, title) {
     <div class="step">
       <h3 class="step-title">${index + 1}. ${escapeHtml(event.description)}</h3>
       <div class="step-image">
-        <img src="${event.screenshot || ''}" alt="Step ${index + 1} Screenshot">
+        ${isSafeScreenshot(event.screenshot) ? `<img src="${event.screenshot}" alt="Step ${index + 1} Screenshot">` : ''}
       </div>
       ${subHtml}
     </div>`;

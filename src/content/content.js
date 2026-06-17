@@ -249,8 +249,15 @@ function showClickHighlight(element) {
 }
 
 function getXPath(element) {
-  // M4 fix: escape quotes in id to prevent malformed XPath
-  if (element.id !== '') return `id("${element.id.replace(/"/g, '&quot;')}")`;
+  if (element.id !== '') {
+    const id = element.id;
+    // XPath 1.0 has no escape sequence; choose delimiter based on content
+    if (!id.includes('"'))  return `id("${id}")`;
+    if (!id.includes("'"))  return `id('${id}')`;
+    // Both quote types present: use concat() to build the string safely
+    const parts = id.split('"').map(p => `"${p}"`).join(`,"'"`,);
+    return `id(concat(${parts}))`;
+  }
   if (element === document.body) return element.tagName;
 
   let ix = 0;
