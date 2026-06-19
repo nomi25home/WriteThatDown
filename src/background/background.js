@@ -93,9 +93,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       captureQueue = captureQueue.then(async () => {
         const screenshot = await captureScreenshot(sender.tab.id);
         respond({});                         // restore indicator now
+        const clean = sanitiseEvent(message.event);
         events.push({
-          ...sanitiseEvent(message.event),
-          description: generateDescription(message.event),
+          ...clean,
+          description: generateDescription(clean),
           screenshot,
           timestamp: Date.now()
         });
@@ -256,7 +257,7 @@ function generateMarkdownGuide(events, title) {
   let md = `# ${title}\n\n`;
   events.forEach((event, index) => {
     md += `## Step ${index + 1}: ${event.description}\n\n`;
-    if (event.screenshot) md += `![Step ${index + 1} Screenshot](${event.screenshot})\n\n`;
+    if (isSafeScreenshot(event.screenshot)) md += `![Step ${index + 1} Screenshot](${event.screenshot})\n\n`;
     if (event.subDescription) md += `${event.subDescription}\n\n`;
     md += `---\n\n`;
   });

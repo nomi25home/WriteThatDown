@@ -62,8 +62,8 @@ A Chrome extension that records your clicks and keystrokes as you work, then gen
 ## Development
 
 ```bash
-bun install   # install dev dependencies (Vitest + jsdom)
-bun test      # run the test suite (56 tests)
+bun install     # install dev dependencies (Vitest + jsdom)
+bun run test    # run the test suite (56 tests)
 ```
 
 Tests cover `escapeHtml`, `isSafeScreenshot`, `sanitiseEvent`, `generateDescription`,

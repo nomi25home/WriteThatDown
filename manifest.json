@@ -24,12 +24,6 @@
       "128": "icons/icon128.png"
     }
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["src/editor/editor.html"],
-      "matches": ["chrome-extension://*/*"]
-    }
-  ],
   "background": {
     "service_worker": "src/background/background.js",
     "type": "module"
