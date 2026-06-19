@@ -1,4 +1,6 @@
 import { generateDescription } from './description-generator.js';
+import { escapeHtml, isSafeScreenshot } from '../utils/shared.js';
+import { sanitiseEvent } from './sanitise.js';
 
 let isRecording = false;
 let isPaused = false;
@@ -15,22 +17,6 @@ chrome.storage.local.get(['isRecording', 'isPaused', 'events'], (result) => {
     events = result.events || [];
   }
 });
-
-// C1 fix: escape all user/page-derived content before injecting into HTML
-function escapeHtml(str = '') {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
-
-// Only embed screenshots that are genuine image data URLs from captureVisibleTab.
-// Rejects anything that could be a javascript: URL or tampered storage value.
-function isSafeScreenshot(url) {
-  return typeof url === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(url);
-}
 
 async function updateStorage() {
   await chrome.storage.local.set({ isRecording, isPaused, events });
@@ -175,21 +161,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   return true;
 });
-
-// Sanitise incoming event fields to safe types/lengths before storing
-function sanitiseEvent(evt) {
-  return {
-    type:       typeof evt.type === 'string'       ? evt.type.substring(0, 20)  : '',
-    tagName:    typeof evt.tagName === 'string'     ? evt.tagName.substring(0, 30) : '',
-    text:       typeof evt.text === 'string'        ? evt.text.substring(0, 300)  : '',
-    ariaLabel:  typeof evt.ariaLabel === 'string'   ? evt.ariaLabel.substring(0, 200) : '',
-    id:         typeof evt.id === 'string'          ? evt.id.substring(0, 100)   : '',
-    fieldLabel: typeof evt.fieldLabel === 'string'  ? evt.fieldLabel.substring(0, 100) : '',
-    key:        typeof evt.key === 'string'         ? evt.key.substring(0, 20)   : '',
-    x:          typeof evt.x === 'number'           ? evt.x : 0,
-    y:          typeof evt.y === 'number'           ? evt.y : 0,
-  };
-}
 
 async function captureScreenshot(tabId) {
   try {

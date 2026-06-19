@@ -1,0 +1,11 @@
+{
+  "name": "writethatdown",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0",
+    "vitest": "^2.0.0"
+  }
+}

@@ -1,15 +1,4 @@
-function escapeHtml(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
-
-function isSafeScreenshot(url) {
-  return typeof url === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(url);
-}
+import { escapeHtml, isSafeScreenshot } from '../utils/shared.js';
 
 chrome.storage.local.get(['events', 'guideTitle', 'pdfTitle'], (result) => {
   const events = result.events || [];

@@ -1,3 +1,5 @@
+import { copyToClipboard } from '../utils/shared.js';
+
 async function updateUI(isRecording, isPaused = false) {
   document.getElementById('startBtn').disabled = isRecording;
   document.getElementById('stopBtn').disabled = !isRecording;
@@ -49,39 +51,11 @@ document.getElementById('exportPdfBtn').addEventListener('click', () => {
   });
 });
 
-document.getElementById('copyClipboardBtn').addEventListener('click', async () => {
+document.getElementById('copyClipboardBtn').addEventListener('click', () => {
   const btn = document.getElementById('copyClipboardBtn');
   const title = document.getElementById('guideTitle').value;
-
   chrome.runtime.sendMessage({ action: 'COPY_GUIDE', title }, async (response) => {
-    if (response && response.data) {
-      try {
-        const blobHtml = new Blob([response.data], { type: 'text/html' });
-        // M3 fix: use DOMParser instead of regex to extract safe plaintext
-        const doc = new DOMParser().parseFromString(response.data, 'text/html');
-        const blobText = new Blob([doc.body.innerText || ''], { type: 'text/plain' });
-
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })
-        ]);
-
-        const original = btn.textContent;
-        btn.textContent = 'Copied!';
-        btn.style.background = '#22c55e';
-        btn.style.color = 'white';
-        btn.style.borderColor = '#16a34a';
-        setTimeout(() => {
-          btn.textContent = original;
-          btn.style.background = '';
-          btn.style.color = '';
-          btn.style.borderColor = '';
-        }, 2000);
-      } catch (err) {
-        console.error('Failed to copy:', err);
-        btn.textContent = 'Copy failed';
-        setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000);
-      }
-    }
+    if (response?.data) await copyToClipboard(response.data, btn);
   });
 });
 

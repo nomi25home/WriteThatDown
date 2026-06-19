@@ -1,3 +1,5 @@
+import { escapeHtml, isSafeScreenshot, copyToClipboard } from '../utils/shared.js';
+
 let events = [];
 let dragSrcIndex = null;
 
@@ -204,23 +206,10 @@ document.getElementById('exportMdBtn').addEventListener('click', () => {
   });
 });
 
-document.getElementById('copyBtn').addEventListener('click', async () => {
+document.getElementById('copyBtn').addEventListener('click', () => {
   const btn = document.getElementById('copyBtn');
   chrome.runtime.sendMessage({ action: 'COPY_GUIDE', title: getTitle() }, async (response) => {
-    if (!response?.data) return;
-    try {
-      const blobHtml = new Blob([response.data], { type: 'text/html' });
-      // M3 fix: use DOMParser instead of regex to extract safe plaintext
-      const doc = new DOMParser().parseFromString(response.data, 'text/html');
-      const blobText = new Blob([doc.body.innerText || ''], { type: 'text/plain' });
-      await navigator.clipboard.write([new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })]);
-      const orig = btn.textContent;
-      btn.textContent = 'Copied!';
-      btn.style.background = '#16a34a';
-      setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
-    } catch (err) {
-      console.error('Copy failed:', err);
-    }
+    if (response?.data) await copyToClipboard(response.data, btn);
   });
 });
 
@@ -231,19 +220,6 @@ function download(data, filename, type) {
   const a = Object.assign(document.createElement('a'), { href: url, download: filename });
   a.click();
   URL.revokeObjectURL(url);
-}
-
-function escapeHtml(str = '') {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
-
-function isSafeScreenshot(url) {
-  return typeof url === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(url);
 }
 
 function autoResize(el) {
