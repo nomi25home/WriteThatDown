@@ -124,6 +124,41 @@ describe('content.js — mousedown flush (first-field typing bug regression)', (
     stopRecording();
   });
 
+  test('field typed BEFORE recording starts is captured when user clicks away (startup race)', () => {
+    // Simulates the race between user typing and START_CAPTURE arriving.
+    // The input listener now fires even before recording, so inputSnapshot is
+    // populated. START_CAPTURE must use '' as the baseline (not currentValue)
+    // so the pre-recording content is captured on blur/mousedown.
+    sendMessageSpy.mockClear();
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    document.body.appendChild(input);
+    input.focus();
+
+    // User types while recording=false (before START_CAPTURE arrives)
+    input.value = 'typed before recording';
+    input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+
+    // START_CAPTURE arrives — recording arms now
+    startRecording();
+
+    // User clicks away without typing anything new after recording started
+    const btn = document.createElement('button');
+    document.body.appendChild(btn);
+    btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+
+    const captureCall = sendMessageSpy.mock.calls.find(
+      c => c[0]?.action === 'CAPTURE_EVENT' && c[0]?.event?.type === 'type',
+    );
+    expect(captureCall).toBeTruthy();
+    expect(captureCall[0].event.text).toBe('typed before recording');
+
+    input.remove();
+    btn.remove();
+    stopRecording();
+  });
+
   test('password field sends [password] placeholder, not the actual value', () => {
     startRecording();
     sendMessageSpy.mockClear();

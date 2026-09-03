@@ -66,10 +66,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!recordingIndicator) {
       recordingIndicator = createRecordingIndicator();
     }
-    // Pre-seed focusValues for any field already focused when recording starts
+    // Pre-seed focusValues for any field already focused when recording starts.
+    // If inputSnapshot has an entry the user typed here before START_CAPTURE
+    // arrived (startup race). Use '' so that content is captured on blur.
     const active = document.activeElement;
     if (active && (isTypeable(active) || isPasswordField(active))) {
-      focusValues.set(active, currentValue(active));
+      const baseline = inputSnapshot.has(active) ? '' : currentValue(active);
+      focusValues.set(active, baseline);
     }
   } else if (message.action === 'STOP_CAPTURE') {
     recording = false;
@@ -147,16 +150,21 @@ document.addEventListener('focus', (e) => {
   if (!recording) return;
   const el = e.target;
   if (isTypeable(el) && !focusValues.has(el)) {
-    focusValues.set(el, currentValue(el));
+    // If inputSnapshot already has an entry the user typed in this field
+    // before recording was armed (race window). Use '' as the baseline so
+    // that content is captured when they leave the field.
+    const baseline = inputSnapshot.has(el) ? '' : currentValue(el);
+    focusValues.set(el, baseline);
   }
 }, true);
 
 // Track every keystroke so we always have the real value, even for
 // React/Draft.js/Slate fields where el.value can lag at blur time.
+// We snapshot regardless of recording state so we can detect the race
+// between user typing and START_CAPTURE arriving (see focusValues seeding below).
 document.addEventListener('input', (e) => {
-  if (!recording) return;
   const el = e.target;
-  if (isTypeable(el)) inputSnapshot.set(el, currentValue(el));
+  if (isTypeable(el)) inputSnapshot.set(el, el.value ?? el.innerText ?? '');
 }, true);
 
 // When focus leaves, if the value changed emit a single "type" event
