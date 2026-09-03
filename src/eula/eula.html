@@ -59,10 +59,7 @@
     /* ── Reset & base ────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html {
-      font-size: 16px;
-      -webkit-text-size-adjust: 100%;
-    }
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 
     body {
       background: var(--bg);
@@ -74,17 +71,10 @@
     }
 
     /* ── Top ledger line ─────────────────────────────────────── */
-    .ledger {
-      height: 4px;
-      background: var(--gradient);
-    }
+    .ledger { height: 4px; background: var(--gradient); }
 
     /* ── Page shell ──────────────────────────────────────────── */
-    .page {
-      max-width: 740px;
-      margin: 0 auto;
-      padding: 48px 24px 80px;
-    }
+    .page { max-width: 740px; margin: 0 auto; padding: 48px 24px 80px; }
 
     /* ── Header ──────────────────────────────────────────────── */
     .header {
@@ -97,46 +87,33 @@
     }
 
     .header-icon {
-      width: 36px;
-      height: 36px;
+      width: 36px; height: 36px;
       border-radius: 8px;
       flex-shrink: 0;
       background: var(--gradient);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
 
-    .header-icon svg {
-      width: 20px;
-      height: 20px;
-      fill: #fff;
-    }
+    .header-icon svg { width: 20px; height: 20px; fill: #fff; }
 
     .header-text { flex: 1; }
 
     .wordmark {
       font-family: "Source Sans 3", sans-serif;
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 15px; font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text-1);
     }
 
     .doc-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-3);
-      margin-top: 2px;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-3); margin-top: 2px;
     }
 
     .header-meta {
-      text-align: right;
-      font-size: 12px;
-      color: var(--text-3);
-      line-height: 1.5;
+      text-align: right; font-size: 12px;
+      color: var(--text-3); line-height: 1.5;
     }
 
     /* ── Intro block ─────────────────────────────────────────── */
@@ -145,90 +122,75 @@
       border-radius: 8px;
       padding: 18px 22px;
       margin-bottom: 44px;
-      font-size: 14px;
-      color: var(--text-2);
-      line-height: 1.65;
+      font-size: 14px; color: var(--text-2); line-height: 1.65;
     }
 
     .intro strong { color: var(--text-1); font-weight: 600; }
 
     /* ── Sections ────────────────────────────────────────────── */
-    .section {
-      margin-bottom: 44px;
-    }
+    .section { margin-bottom: 44px; }
 
     .section-number {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--blue);
-      margin-bottom: 6px;
-      display: block;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--blue); margin-bottom: 6px; display: block;
     }
 
     .section-title {
       font-family: "Lora", Georgia, serif;
-      font-size: 19px;
-      font-weight: 600;
-      color: var(--text-1);
-      margin-bottom: 14px;
-      text-wrap: balance;
-      line-height: 1.35;
+      font-size: 19px; font-weight: 600;
+      color: var(--text-1); margin-bottom: 14px;
+      text-wrap: balance; line-height: 1.35;
     }
 
     .section p {
-      color: var(--text-2);
-      margin-bottom: 12px;
-      max-width: 65ch;
+      color: var(--text-2); margin-bottom: 12px; max-width: 65ch;
     }
 
     .section p:last-child { margin-bottom: 0; }
 
     /* ── Subsections ─────────────────────────────────────────── */
-    .subsection {
-      margin-bottom: 18px;
-    }
+    .subsection { margin-bottom: 18px; }
 
     .subsection-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: var(--text-1);
-      margin-bottom: 6px;
-      text-transform: uppercase;
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.04em; color: var(--text-1);
+      margin-bottom: 6px; text-transform: uppercase;
     }
 
-    /* ── Lists ───────────────────────────────────────────────── */
+    /* ── Restriction list (✕ markers) ────────────────────────── */
     .restriction-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 8px;
     }
 
     .restriction-list li {
-      display: flex;
-      gap: 12px;
-      align-items: baseline;
-      color: var(--text-2);
-      font-size: 14.5px;
-      line-height: 1.6;
+      display: flex; gap: 12px; align-items: baseline;
+      color: var(--text-2); font-size: 14.5px; line-height: 1.6;
     }
 
     .restriction-list li::before {
-      content: "✕";
-      font-size: 10px;
-      font-weight: 700;
-      color: #c0392b;
-      flex-shrink: 0;
-      margin-top: 4px;
-      letter-spacing: 0;
+      content: "✕"; font-size: 10px; font-weight: 700;
+      color: #c0392b; flex-shrink: 0; margin-top: 4px; letter-spacing: 0;
     }
 
-    /* ── Privacy block — product promise, not boilerplate ────── */
+    /* ── Neutral list (plain bullets) ────────────────────────── */
+    .plain-list {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .plain-list li {
+      display: flex; gap: 12px; align-items: baseline;
+      color: var(--text-2); font-size: 14.5px; line-height: 1.6;
+    }
+
+    .plain-list li::before {
+      content: "–"; font-size: 12px; font-weight: 600;
+      color: var(--text-3); flex-shrink: 0;
+    }
+
+    /* ── Privacy block — product promise ─────────────────────── */
     .privacy-block {
       border-left: 3px solid var(--privacy-bar);
       padding: 16px 20px;
@@ -238,38 +200,24 @@
     }
 
     .privacy-block .promise-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--blue);
-      margin-bottom: 8px;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--blue); margin-bottom: 8px;
     }
 
     .privacy-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 7px;
     }
 
     .privacy-list li {
-      display: flex;
-      gap: 10px;
-      align-items: baseline;
-      font-size: 14px;
-      color: var(--text-2);
-      line-height: 1.55;
+      display: flex; gap: 10px; align-items: baseline;
+      font-size: 14px; color: var(--text-2); line-height: 1.55;
     }
 
     .privacy-list li::before {
-      content: "✓";
-      font-size: 11px;
-      font-weight: 700;
-      color: #16a34a;
-      flex-shrink: 0;
+      content: "✓"; font-size: 11px; font-weight: 700;
+      color: #16a34a; flex-shrink: 0;
     }
 
     /* ── Caps blocks (warranty / liability) ──────────────────── */
@@ -278,85 +226,67 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 18px 22px;
-      font-size: 13px;
-      color: var(--text-3);
-      line-height: 1.65;
+      font-size: 13px; color: var(--text-3); line-height: 1.65;
     }
 
     /* ── License tiers ───────────────────────────────────────── */
     .tier-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 16px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 14px; margin-bottom: 16px;
     }
 
-    @media (max-width: 520px) {
-      .tier-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 520px) { .tier-grid { grid-template-columns: 1fr; } }
 
     .tier-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px;
+      border-radius: 10px; padding: 18px;
     }
 
     .tier-card.pro { border-top: 3px solid var(--blue); }
     .tier-card.free { border-top: 3px solid #6b7280; }
 
     .tier-name {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-3);
-      margin-bottom: 6px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 6px;
     }
 
     .tier-card.pro .tier-name { color: var(--blue); }
 
-    .tier-desc {
+    .tier-desc { font-size: 13.5px; color: var(--text-2); line-height: 1.55; }
+
+    /* ── Payment note ────────────────────────────────────────── */
+    .payment-note {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
       font-size: 13.5px;
       color: var(--text-2);
-      line-height: 1.55;
+      line-height: 1.6;
+      margin-top: 14px;
     }
 
+    .payment-note strong { color: var(--text-1); font-weight: 600; }
+
     /* ── Divider ─────────────────────────────────────────────── */
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 48px 0;
-    }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
 
     /* ── Footer ──────────────────────────────────────────────── */
     .footer {
       padding-top: 32px;
       border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      flex-wrap: wrap;
-      gap: 16px;
+      display: flex; justify-content: space-between;
+      align-items: flex-end; flex-wrap: wrap; gap: 16px;
     }
 
-    .footer-brand {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-1);
-    }
-
-    .footer-sub {
-      font-size: 12px;
-      color: var(--text-3);
-      margin-top: 2px;
-    }
+    .footer-brand { font-size: 13px; font-weight: 600; color: var(--text-1); }
+    .footer-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
 
     .footer-contact a {
-      font-size: 13px;
-      color: var(--link);
-      text-decoration: none;
-      font-weight: 500;
+      font-size: 13px; color: var(--link);
+      text-decoration: none; font-weight: 500;
     }
 
     .footer-contact a:hover { text-decoration: underline; }
@@ -390,12 +320,20 @@
 
   <!-- Intro -->
   <div class="intro">
-    This Agreement is between <strong>you</strong> and <strong>WriteThatDown</strong>, a software business operating out of India. By installing or using the WriteThatDown Chrome extension, you agree to these terms. If you do not agree, please uninstall the extension.
+    This Agreement is between <strong>you</strong> and <strong>WriteThatDown</strong>, Mumbai, India. By installing or using the WriteThatDown Chrome extension, you agree to these terms. If you do not agree, please uninstall the extension.
   </div>
 
-  <!-- 1. License Grant -->
+  <!-- 1. Eligibility -->
   <section class="section">
     <span class="section-number">Section 1</span>
+    <h2 class="section-title">Eligibility</h2>
+    <p>You must be at least <strong>16 years of age</strong> to install or use the Extension. By using the Extension, you represent and warrant that you meet this age requirement.</p>
+    <p>If you are using the Extension on behalf of an organisation, you represent that you are authorised to bind that organisation to this Agreement.</p>
+  </section>
+
+  <!-- 2. License Grant -->
+  <section class="section">
+    <span class="section-number">Section 2</span>
     <h2 class="section-title">License Grant</h2>
 
     <div class="tier-grid">
@@ -411,18 +349,22 @@
 
     <div class="subsection">
       <div class="subsection-title">Pro License Key Rules</div>
-      <ul class="restriction-list" style="list-style: none;">
-        <li style="color: var(--text-2); font-size: 14.5px;">Issued to a single named user or device</li>
-        <li style="color: var(--text-2); font-size: 14.5px;">Non-transferable — may not be shared, resold, or sublicensed</li>
-        <li style="color: var(--text-2); font-size: 14.5px;">Valid for the term stated at purchase (perpetual if no term is stated)</li>
-        <li style="color: var(--text-2); font-size: 14.5px;">Subject to revocation if used in violation of this Agreement</li>
+      <ul class="plain-list">
+        <li>Issued to a single named user or device</li>
+        <li>Non-transferable — may not be shared, resold, or sublicensed</li>
+        <li>Valid for the term stated at purchase (perpetual if no term is stated)</li>
+        <li>Subject to revocation if used in violation of this Agreement</li>
       </ul>
+    </div>
+
+    <div class="payment-note">
+      <strong>Payment &amp; Refunds:</strong> License key purchases are processed by a third-party payment processor. Refund eligibility is governed by that processor's policies at the time of purchase. WriteThatDown's liability for any payment dispute is limited to the amount paid for the relevant license key.
     </div>
   </section>
 
-  <!-- 2. Restrictions -->
+  <!-- 3. Restrictions -->
   <section class="section">
-    <span class="section-number">Section 2</span>
+    <span class="section-number">Section 3</span>
     <h2 class="section-title">Restrictions</h2>
     <p>You may not, and may not permit any third party to:</p>
     <ul class="restriction-list">
@@ -435,9 +377,9 @@
     </ul>
   </section>
 
-  <!-- 3. Privacy and Data -->
+  <!-- 4. Privacy and Data -->
   <section class="section">
-    <span class="section-number">Section 3</span>
+    <span class="section-number">Section 4</span>
     <h2 class="section-title">Privacy and Data</h2>
 
     <div class="privacy-block">
@@ -452,58 +394,81 @@
     <p>WriteThatDown does not operate a cloud sync service, user account system, or data collection backend for guide content.</p>
   </section>
 
-  <!-- 4. Intellectual Property -->
-  <section class="section">
-    <span class="section-number">Section 4</span>
-    <h2 class="section-title">Intellectual Property</h2>
-    <p>The Extension — including its source code, design, trademarks, and brand assets (including the WriteThatDown wordmark and icon) — is and remains the exclusive property of WriteThatDown. This Agreement does not transfer any ownership rights to you. All rights not expressly granted herein are reserved.</p>
-  </section>
-
-  <!-- 5. Updates -->
+  <!-- 5. Intellectual Property and Feedback -->
   <section class="section">
     <span class="section-number">Section 5</span>
+    <h2 class="section-title">Intellectual Property and Feedback</h2>
+    <p>The Extension — including its source code, design, trademarks, and brand assets (including the WriteThatDown wordmark and icon) — is and remains the exclusive property of WriteThatDown. This Agreement does not transfer any ownership rights to you. All rights not expressly granted herein are reserved.</p>
+    <p>If you submit any feedback, suggestions, ideas, bug reports, or feature requests to WriteThatDown (by any means, including email), you assign to WriteThatDown all rights, title, and interest in that feedback, royalty-free and without restriction. WriteThatDown may use such feedback for any purpose without attribution or compensation to you.</p>
+  </section>
+
+  <!-- 6. Updates -->
+  <section class="section">
+    <span class="section-number">Section 6</span>
     <h2 class="section-title">Updates and Changes</h2>
     <p>WriteThatDown may release updates to the Extension from time to time. Updates may add, modify, or remove features, including free-tier feature limits. Continued use of the Extension after an update constitutes acceptance of any revised terms accompanying that update.</p>
   </section>
 
   <hr class="divider" />
 
-  <!-- 6. Disclaimer -->
+  <!-- 7. Disclaimer -->
   <section class="section">
-    <span class="section-number">Section 6</span>
+    <span class="section-number">Section 7</span>
     <h2 class="section-title">Disclaimer of Warranties</h2>
     <div class="caps-block">
       THE EXTENSION IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, OR NON-INFRINGEMENT. WRITETHATDOWN DOES NOT WARRANT THAT THE EXTENSION WILL BE ERROR-FREE, UNINTERRUPTED, OR FREE OF HARMFUL COMPONENTS.
     </div>
   </section>
 
-  <!-- 7. Limitation of Liability -->
+  <!-- 8. Limitation of Liability -->
   <section class="section">
-    <span class="section-number">Section 7</span>
+    <span class="section-number">Section 8</span>
     <h2 class="section-title">Limitation of Liability</h2>
     <div class="caps-block">
       TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, WRITETHATDOWN SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF DATA, PROFITS, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF OR INABILITY TO USE THE EXTENSION, EVEN IF WRITETHATDOWN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.<br /><br />
-      IN NO EVENT SHALL WRITETHATDOWN'S TOTAL LIABILITY TO YOU EXCEED THE AMOUNT YOU PAID FOR YOUR LICENSE KEY IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR INR 1,000, WHICHEVER IS GREATER.
+      IN NO EVENT SHALL WRITETHATDOWN'S TOTAL LIABILITY TO YOU EXCEED THE AMOUNT YOU PAID FOR YOUR LICENSE KEY IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR INR 1,000, WHICHEVER IS GREATER.<br /><br />
+      ANY CLAIM ARISING OUT OF OR RELATING TO THIS AGREEMENT MUST BE BROUGHT WITHIN ONE (1) YEAR OF THE DATE ON WHICH THE CAUSE OF ACTION AROSE. CLAIMS NOT BROUGHT WITHIN THIS PERIOD ARE PERMANENTLY BARRED.
     </div>
   </section>
 
-  <!-- 8. Governing Law -->
-  <section class="section">
-    <span class="section-number">Section 8</span>
-    <h2 class="section-title">Governing Law and Dispute Resolution</h2>
-    <p>This Agreement shall be governed by and construed in accordance with the laws of India, including the Indian Contract Act, 1872 and the Information Technology Act, 2000, without regard to its conflict of law provisions. Any dispute arising out of or relating to this Agreement shall be subject to the exclusive jurisdiction of the competent courts in India.</p>
-  </section>
-
-  <!-- 9. Termination -->
+  <!-- 9. Indemnification -->
   <section class="section">
     <span class="section-number">Section 9</span>
-    <h2 class="section-title">Termination</h2>
-    <p>This Agreement is effective until terminated. It terminates automatically if you fail to comply with any term herein. Upon termination, you must cease all use of the Extension and destroy any copies in your possession. Sections 4, 6, 7, and 8 survive termination.</p>
+    <h2 class="section-title">Indemnification</h2>
+    <p>You agree to indemnify, defend, and hold harmless WriteThatDown and its officers, employees, and agents from and against any claims, liabilities, damages, losses, and expenses (including reasonable legal fees) arising out of or in any way connected with:</p>
+    <ul class="plain-list" style="margin-bottom: 12px;">
+      <li>Your use or misuse of the Extension</li>
+      <li>Your violation of any term of this Agreement</li>
+      <li>Your infringement of any third-party intellectual property or other rights</li>
+      <li>Any content you create, record, or export using the Extension</li>
+    </ul>
+    <p>WriteThatDown reserves the right to assume exclusive control of any matter subject to indemnification by you, at your expense.</p>
   </section>
 
-  <!-- 10. Entire Agreement -->
+  <!-- 10. Force Majeure -->
   <section class="section">
     <span class="section-number">Section 10</span>
+    <h2 class="section-title">Force Majeure</h2>
+    <p>WriteThatDown shall not be liable for any delay or failure to perform resulting from causes beyond its reasonable control, including but not limited to acts of God, natural disasters, war, terrorism, internet or telecommunications outages, government actions, or third-party service failures. In such events, WriteThatDown's obligations are suspended for the duration of the force majeure event.</p>
+  </section>
+
+  <!-- 11. Governing Law -->
+  <section class="section">
+    <span class="section-number">Section 11</span>
+    <h2 class="section-title">Governing Law and Dispute Resolution</h2>
+    <p>This Agreement shall be governed by and construed in accordance with the laws of India, including the Indian Contract Act, 1872 and the Information Technology Act, 2000, without regard to its conflict of law provisions. Any dispute arising out of or relating to this Agreement shall be subject to the exclusive jurisdiction of the competent courts in Mumbai, Maharashtra, India.</p>
+  </section>
+
+  <!-- 12. Termination -->
+  <section class="section">
+    <span class="section-number">Section 12</span>
+    <h2 class="section-title">Termination</h2>
+    <p>This Agreement is effective until terminated. It terminates automatically if you fail to comply with any term herein. Upon termination, you must cease all use of the Extension and destroy any copies in your possession. Sections 5, 7, 8, 9, and 11 survive termination.</p>
+  </section>
+
+  <!-- 13. Entire Agreement -->
+  <section class="section">
+    <span class="section-number">Section 13</span>
     <h2 class="section-title">Entire Agreement</h2>
     <p>This Agreement constitutes the entire agreement between you and WriteThatDown with respect to the Extension and supersedes all prior or contemporaneous understandings, representations, and agreements, whether written or oral.</p>
   </section>
@@ -512,7 +477,7 @@
   <footer class="footer">
     <div>
       <div class="footer-brand">WriteThatDown</div>
-      <div class="footer-sub">India &nbsp;·&nbsp; © 2026</div>
+      <div class="footer-sub">Mumbai, India &nbsp;·&nbsp; © 2026</div>
     </div>
     <div class="footer-contact">
       <a href="mailto:nomi25home@gmail.com">nomi25home@gmail.com</a>
