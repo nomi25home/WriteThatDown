@@ -9,6 +9,7 @@ window.__wtdActive = true;
 let recording = false;
 let recordingIndicator = null;
 let captureGeneration = 0;
+let stepCount = 0;
 const focusValues   = new WeakMap(); // baseline value at first focus
 const inputSnapshot = new WeakMap(); // most recent value seen via input event
 
@@ -64,6 +65,7 @@ function createRecordingIndicator() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'START_CAPTURE') {
     recording = true;
+    stepCount = 0;
     if (!recordingIndicator) {
       recordingIndicator = createRecordingIndicator();
     }
@@ -107,7 +109,7 @@ document.addEventListener('mousedown', (e) => {
     chrome.runtime.sendMessage({
       action: 'CAPTURE_EVENT',
       event: { type: 'type', text: after.trim().substring(0, 200), fieldLabel: label }
-    });
+    }, () => { stepCount++; updateIndicatorCount(); });
     focusValues.set(focused, after);
   }
 }, true);
@@ -143,6 +145,8 @@ document.addEventListener('click', (e) => {
         if (thisGeneration === captureGeneration && recordingIndicator) {
           recordingIndicator.style.display = '';
         }
+        stepCount++;
+        updateIndicatorCount();
       });
     });
   });
@@ -195,7 +199,7 @@ document.addEventListener('blur', (e) => {
     chrome.runtime.sendMessage({
       action: 'CAPTURE_EVENT',
       event: { type: 'type', text: after.trim().substring(0, 200), fieldLabel: label }
-    });
+    }, () => { stepCount++; updateIndicatorCount(); });
     // Advance baseline so a second visit to the same field only captures new text
     focusValues.set(el, after);
   }
@@ -203,6 +207,12 @@ document.addEventListener('blur', (e) => {
 
 function currentValue(el) {
   return inputSnapshot.get(el) ?? el.value ?? el.innerText ?? '';
+}
+
+function updateIndicatorCount() {
+  if (!recordingIndicator) return;
+  const span = recordingIndicator.querySelector('span');
+  if (span) span.textContent = `✍️ Writing it down… · ${stepCount}`;
 }
 
 // Return the best human-readable label for a form field, or null.
