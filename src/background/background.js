@@ -6,6 +6,7 @@ let isRecording = false;
 let isPaused = false;
 let events = [];
 let captureQueue = Promise.resolve();
+let recordingTabId = null;
 
 // Restore recording state when the service worker restarts mid-session.
 // Chrome can kill the SW after ~30 s of inactivity; without this, any
@@ -49,6 +50,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateStorage();
 
     const targetTabId = message.tabId;
+    recordingTabId = targetTabId || null;
     if (targetTabId) {
       // Inject (or re-use) the content script, then signal it to start.
       // executeScript is idempotent here because content.js guards against
@@ -70,6 +72,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isFromExtension(sender)) return;
     isRecording = false;
     isPaused = false;
+    recordingTabId = null;
     updateStorage();
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs?.[0]) {
@@ -161,6 +164,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   return true;
+});
+
+// Re-inject content.js and resume recording when the user navigates to a new
+// page mid-session. The old content script dies with the page; this listener
+// brings it back so steps keep being captured without the user noticing.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== 'complete') return;
+  if (!isRecording || isPaused || tabId !== recordingTabId) return;
+
+  chrome.scripting.executeScript({ target: { tabId }, files: ['src/content/content.js'] })
+    .then(() => {
+      chrome.tabs.sendMessage(tabId, {
+        action: 'START_CAPTURE',
+        stepCount: events.length   // restore counter so indicator is correct
+      }).catch(() => {});
+    })
+    .catch(() => {});
 });
 
 async function captureScreenshot(tabId, eventType) {

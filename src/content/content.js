@@ -65,10 +65,11 @@ function createRecordingIndicator() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'START_CAPTURE') {
     recording = true;
-    stepCount = 0;
+    stepCount = typeof message.stepCount === 'number' ? message.stepCount : 0;
     if (!recordingIndicator) {
       recordingIndicator = createRecordingIndicator();
     }
+    updateIndicatorCount();
     // Pre-seed focusValues for any field already focused when recording starts.
     // If inputSnapshot has an entry the user typed here before START_CAPTURE
     // arrived (startup race). Use '' so that content is captured on blur.
