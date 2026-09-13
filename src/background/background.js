@@ -91,7 +91,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // exactly when to un-hide the recording indicator (no screenshot contamination).
     const doCapture = (respond) => {
       captureQueue = captureQueue.then(async () => {
-        const screenshot = await captureScreenshot(sender.tab.id);
+        const screenshot = await captureScreenshot(sender.tab.id, clean.type);
         respond({});                         // restore indicator now
         const clean = sanitiseEvent(message.event);
         events.push({
@@ -163,10 +163,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-async function captureScreenshot(tabId) {
+async function captureScreenshot(tabId, eventType) {
   try {
-    // Wait for UI animations (dropdowns, modals) to settle before capturing.
-    await new Promise(r => setTimeout(r, 150));
+    // For click events wait for UI animations (dropdowns, modals) to settle.
+    // For type events capture immediately — the flush fires on mousedown and
+    // a delay would let the subsequent click close the dropdown before capture.
+    if (eventType === 'click') {
+      await new Promise(r => setTimeout(r, 150));
+    }
     return await chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 50 });
   } catch {
     return null;
