@@ -103,10 +103,7 @@ document.addEventListener('mousedown', (e) => {
   const before = focusValues.get(focused) ?? '';
   const after  = currentValue(focused);
   if (after.trim() && after !== before) {
-    const label = focused.getAttribute('placeholder')
-      || focused.getAttribute('aria-label')
-      || focused.getAttribute('name')
-      || focused.id || null;
+    const label = fieldLabel(focused);
     chrome.runtime.sendMessage({
       action: 'CAPTURE_EVENT',
       event: { type: 'type', text: after.trim().substring(0, 200), fieldLabel: label }
@@ -182,8 +179,7 @@ document.addEventListener('blur', (e) => {
 
   // C2 fix: for password fields, record interaction but never the value
   if (isPasswordField(el)) {
-    const label = el.getAttribute('placeholder') || el.getAttribute('aria-label')
-      || el.getAttribute('name') || el.id || 'password field';
+    const label = fieldLabel(el) || 'password field';
     chrome.runtime.sendMessage({
       action: 'CAPTURE_EVENT',
       event: { type: 'type', text: '[password]', fieldLabel: label }
@@ -195,11 +191,7 @@ document.addEventListener('blur', (e) => {
   const before = focusValues.get(el) ?? '';
   const after  = currentValue(el);
   if (after.trim() && after !== before) {
-    const label = el.getAttribute('placeholder')
-      || el.getAttribute('aria-label')
-      || el.getAttribute('name')
-      || el.id
-      || null;
+    const label = fieldLabel(el);
     chrome.runtime.sendMessage({
       action: 'CAPTURE_EVENT',
       event: { type: 'type', text: after.trim().substring(0, 200), fieldLabel: label }
@@ -209,10 +201,20 @@ document.addEventListener('blur', (e) => {
   }
 }, true);
 
-// Best available current value for a field: prefer the snapshot from the last
-// input event (always fresh), fall back to the DOM property.
 function currentValue(el) {
   return inputSnapshot.get(el) ?? el.value ?? el.innerText ?? '';
+}
+
+// Return the best human-readable label for a form field, or null.
+// Trims attribute values so whitespace-only strings (e.g. aria-label=" ")
+// are treated as absent rather than becoming garbled "into " "".
+function fieldLabel(el) {
+  const pick = (v) => (typeof v === 'string' && v.trim()) ? v.trim() : null;
+  return pick(el.getAttribute('placeholder'))
+    || pick(el.getAttribute('aria-label'))
+    || pick(el.getAttribute('name'))
+    || pick(el.id)
+    || null;
 }
 
 function isTypeable(el) {
