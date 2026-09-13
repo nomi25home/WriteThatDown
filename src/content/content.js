@@ -267,8 +267,11 @@ function showClickHighlight(element) {
 function getAncestorText(el) {
   let node = el.parentElement;
   for (let i = 0; i < 3 && node && node !== document.body; i++, node = node.parentElement) {
-    const t = node.innerText?.trim().replace(/\s+/g, ' ').substring(0, 60);
-    if (t) return t;
+    // Skip containers with many children — they are layout wrappers, not labels
+    if (node.children.length > 4) continue;
+    const t = node.innerText?.trim().replace(/\s+/g, ' ');
+    // Only use if short and single-line — a label, not a form section
+    if (t && t.length <= 50 && !t.includes('\n')) return t;
   }
   return '';
 }
