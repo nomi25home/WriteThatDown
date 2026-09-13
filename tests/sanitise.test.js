@@ -7,6 +7,7 @@ describe('sanitiseEvent', () => {
       type: 'click', tagName: 'BUTTON', text: 'Submit',
       ariaLabel: 'Submit form', id: 'btn', fieldLabel: 'Submit',
       key: 'Enter', x: 100, y: 200,
+      role: 'button', ancestorText: 'Confirm dialog',
     };
     expect(sanitiseEvent(input)).toEqual(input);
   });

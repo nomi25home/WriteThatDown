@@ -5,13 +5,15 @@ chrome.storage.local.get(['events', 'guideTitle', 'pdfTitle'], (result) => {
   const title = result.pdfTitle || result.guideTitle || 'User Guide';
 
   const stepsHtml = events.map((event, i) => {
-    const imgHtml = isSafeScreenshot(event.screenshot)
+    const hasScreenshot = isSafeScreenshot(event.screenshot);
+    const imgHtml = hasScreenshot
       ? `<div class="step-image"><img src="${event.screenshot}" alt="Step ${i + 1}"></div>`
       : '';
     const subHtml = event.subDescription
       ? `<p class="step-sub">${escapeHtml(event.subDescription)}</p>` : '';
+    const stepClass = hasScreenshot ? 'step step-has-image' : 'step step-text-only';
     return `
-      <div class="step">
+      <div class="${stepClass}">
         <div class="step-header">
           <div class="step-num">${i + 1}</div>
           <h3 class="step-title">${escapeHtml(event.description)}</h3>
@@ -37,7 +39,8 @@ chrome.storage.local.get(['events', 'guideTitle', 'pdfTitle'], (result) => {
     .cover h1 { font-size: 30px; font-weight: 800; color: #000; margin-bottom: 6px; }
     .cover .meta { font-size: 13px; color: #888; }
     .cover .brand { font-size: 13px; color: #0a44ec; font-weight: 600; margin-top: 4px; }
-    .step { margin-bottom: 44px; page-break-inside: avoid; }
+    .step { margin-bottom: 44px; }
+    .step-has-image { page-break-inside: avoid; }
     .step-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
     .step-num {
       width: 30px; height: 30px; border-radius: 50%;
@@ -56,7 +59,7 @@ chrome.storage.local.get(['events', 'guideTitle', 'pdfTitle'], (result) => {
     .step-sub { font-size: 13px; color: #555; line-height: 1.6; padding-left: 44px; }
     @media print {
       body { padding: 0; }
-      .step { page-break-inside: avoid; }
+      .step-has-image { page-break-inside: avoid; }
     }
   </style>
 </head>

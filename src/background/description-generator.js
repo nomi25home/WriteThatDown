@@ -16,9 +16,12 @@ export function generateDescription(event) {
     const label = event.ariaLabel || event.text;
     const text = label ? `"${label}"` : '';
     const tag = event.tagName.toLowerCase();
+    const isButtonRole = event.role === 'button' || event.role === 'link' || event.role === 'menuitem'
+      || event.role === 'tab' || event.role === 'option' || event.role === 'checkbox'
+      || event.role === 'radio' || event.role === 'switch';
 
-    if (tag === 'button' || tag === 'input' || tag === 'a') {
-      const type = tag === 'a' ? 'link' : 'button';
+    if (tag === 'button' || tag === 'input' || tag === 'a' || isButtonRole) {
+      const type = (tag === 'a' || event.role === 'link') ? 'link' : 'button';
       return text ? `Click the ${type} ${text}` : `Click the ${type}`;
     }
 
@@ -28,6 +31,10 @@ export function generateDescription(event) {
 
     if (event.id) {
       return `Click the element with ID ${event.id}`;
+    }
+
+    if (event.ancestorText) {
+      return `Click inside "${event.ancestorText}"`;
     }
 
     return `Click the element`;

@@ -165,6 +165,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function captureScreenshot(tabId) {
   try {
+    // Wait for UI animations (dropdowns, modals) to settle before capturing.
+    await new Promise(r => setTimeout(r, 150));
     return await chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 50 });
   } catch {
     return null;

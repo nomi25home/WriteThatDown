@@ -7,7 +7,9 @@ export function sanitiseEvent(evt) {
     id:         typeof evt.id === 'string'          ? evt.id.substring(0, 100)        : '',
     fieldLabel: typeof evt.fieldLabel === 'string'  ? evt.fieldLabel.substring(0, 100): '',
     key:        typeof evt.key === 'string'         ? evt.key.substring(0, 20)        : '',
-    x:          typeof evt.x === 'number'           ? evt.x                           : 0,
-    y:          typeof evt.y === 'number'           ? evt.y                           : 0,
+    x:            typeof evt.x === 'number'              ? evt.x                              : 0,
+    y:            typeof evt.y === 'number'              ? evt.y                              : 0,
+    role:         typeof evt.role === 'string'           ? evt.role.substring(0, 50)          : '',
+    ancestorText: typeof evt.ancestorText === 'string'   ? evt.ancestorText.substring(0, 100) : '',
   };
 }

@@ -8,6 +8,7 @@ window.__wtdActive = true;
 
 let recording = false;
 let recordingIndicator = null;
+let captureGeneration = 0;
 const focusValues   = new WeakMap(); // baseline value at first focus
 const inputSnapshot = new WeakMap(); // most recent value seen via input event
 
@@ -127,17 +128,24 @@ document.addEventListener('click', (e) => {
     ariaLabel: element.getAttribute('aria-label') || element.getAttribute('title'),
     id: element.id,
     className: element.className,
+    role: element.getAttribute('role') || '',
+    ancestorText: getAncestorText(element),
     xpath: getXPath(element),
     x: (e.clientX / window.innerWidth) * 100,
     y: (e.clientY / window.innerHeight) * 100
   };
 
-  // Hide the indicator, wait for the browser to repaint, then capture
+  // Hide the indicator and wait for two repaints so it is gone from the
+  // screenshot. A generation counter prevents the previous step's callback
+  // from re-showing the indicator after a rapid successive click.
+  const thisGeneration = ++captureGeneration;
   if (recordingIndicator) recordingIndicator.style.display = 'none';
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       chrome.runtime.sendMessage({ action: 'CAPTURE_EVENT', event: eventData }, () => {
-        if (recordingIndicator) recordingIndicator.style.display = '';
+        if (thisGeneration === captureGeneration && recordingIndicator) {
+          recordingIndicator.style.display = '';
+        }
       });
     });
   });
@@ -254,6 +262,15 @@ function showClickHighlight(element) {
       setTimeout(() => highlight.remove(), 400);
     }, 300);
   });
+}
+
+function getAncestorText(el) {
+  let node = el.parentElement;
+  for (let i = 0; i < 3 && node && node !== document.body; i++, node = node.parentElement) {
+    const t = node.innerText?.trim().replace(/\s+/g, ' ').substring(0, 60);
+    if (t) return t;
+  }
+  return '';
 }
 
 function getXPath(element) {
