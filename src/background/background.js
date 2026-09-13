@@ -11,16 +11,17 @@ let recordingTabId = null;
 // Restore recording state when the service worker restarts mid-session.
 // Chrome can kill the SW after ~30 s of inactivity; without this, any
 // CAPTURE_EVENT that wakes the SW sees isRecording=false and is dropped.
-chrome.storage.local.get(['isRecording', 'isPaused', 'events'], (result) => {
+chrome.storage.local.get(['isRecording', 'isPaused', 'events', 'recordingTabId'], (result) => {
   if (result.isRecording) {
     isRecording = true;
     isPaused = result.isPaused || false;
     events = result.events || [];
+    recordingTabId = result.recordingTabId || null;
   }
 });
 
 async function updateStorage() {
-  await chrome.storage.local.set({ isRecording, isPaused, events });
+  await chrome.storage.local.set({ isRecording, isPaused, events, recordingTabId });
 }
 
 // H1 fix: only accept messages from this extension's own pages.
@@ -171,16 +172,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // brings it back so steps keep being captured without the user noticing.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status !== 'complete') return;
-  if (!isRecording || isPaused || tabId !== recordingTabId) return;
+  if (!isRecording || isPaused) return;
 
-  chrome.scripting.executeScript({ target: { tabId }, files: ['src/content/content.js'] })
-    .then(() => {
-      chrome.tabs.sendMessage(tabId, {
-        action: 'START_CAPTURE',
-        stepCount: events.length   // restore counter so indicator is correct
-      }).catch(() => {});
-    })
-    .catch(() => {});
+  // recordingTabId may be null if the SW restarted — re-read storage once.
+  const doReInject = (targetId) => {
+    if (tabId !== targetId) return;
+    chrome.scripting.executeScript({ target: { tabId }, files: ['src/content/content.js'] })
+      .then(() => {
+        chrome.tabs.sendMessage(tabId, {
+          action: 'START_CAPTURE',
+          stepCount: events.length
+        }).catch(() => {});
+      })
+      .catch(() => {});
+  };
+
+  if (recordingTabId) {
+    doReInject(recordingTabId);
+  } else {
+    chrome.storage.local.get(['recordingTabId'], (r) => {
+      if (r.recordingTabId) {
+        recordingTabId = r.recordingTabId;
+        doReInject(recordingTabId);
+      }
+    });
+  }
 });
 
 async function captureScreenshot(tabId, eventType) {
